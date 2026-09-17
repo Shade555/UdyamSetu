@@ -22,6 +22,7 @@ This is the living implementation checklist. Update task status and notes as wor
 ## Data and Backend
 
 - [ ] Design the Supabase PostgreSQL/PostGIS schema for schemes, rules, parameters, partners, sources, versions, profiles, and sync state.
+- [x] Add the initial Supabase SQL package with extensions, schema, indexes, RLS policies, Auth trigger, and partner search function.
 - [ ] Add version-controlled verified scheme seed data.
 - [ ] Add version-controlled verified partner seed data.
 - [ ] Implement auditable deterministic eligibility rules.
