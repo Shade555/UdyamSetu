@@ -1,0 +1,1030 @@
+You are a senior full-stack engineer, AI engineer, and product architect. Build a complete functional prototype called “UdyamSetu”.
+
+IMPORTANT CONTEXT:
+UdyamSetu is an AI-assisted, rule-driven decision-support platform designed to help users understand and navigate financing/education-related schemes and reach the appropriate official next step.
+
+This is NOT supposed to be a simple chatbot or a clickable UI mockup. The core journey must actually work end-to-end.
+
+The fundamental principle of the application is:
+
+AI understands and explains.
+Deterministic rules and verified official data decide.
+
+Do NOT allow an LLM to silently determine eligibility, invent scheme conditions, calculate financial values, invent partner information, or claim approval/sanction.
+
+==================================================
+1. CORE PRODUCT
+==================================================
+
+The main UdyamSetu journey is:
+
+USER NEED
+→ Understand Request
+→ Structured User Profile
+→ Rule-Based Eligibility
+→ Scheme Matching + Explanation
+→ Financial Understanding
+→ Document Readiness
+→ Authorized Partner Routing
+→ Official Next Step
+
+The user should be able to start with a need such as:
+
+“I want ₹3 lakh for a dairy business.”
+
+The application should collect/understand information such as:
+
+- Purpose
+- Project/business type
+- Project cost
+- Desired loan amount
+- Income
+- Education
+- Location
+- Relevant beneficiary/category information
+- Other scheme-specific conditions
+
+The user can provide information through forms and, where implemented, natural language/voice.
+
+The system converts this into a structured profile.
+
+The user MUST be shown the extracted/structured information and allowed to correct it before eligibility evaluation.
+
+==================================================
+2. TECHNOLOGY STACK
+==================================================
+
+FRONTEND:
+- React
+- Vite
+- TypeScript preferred
+- Tailwind CSS
+- Mobile-first responsive PWA
+
+BACKEND:
+- Python
+- FastAPI
+
+DATABASE:
+- SUPABASE
+
+VERY IMPORTANT:
+When the architecture says “PostgreSQL”, it means the PostgreSQL database provided by Supabase.
+
+DO NOT create a local PostgreSQL Docker container.
+DO NOT require docker-compose for PostgreSQL.
+DO NOT make the user install/manage PostgreSQL locally.
+
+Use Supabase as the managed backend database.
+
+Use:
+- Supabase PostgreSQL
+- Supabase Auth if authentication is needed
+- Supabase Storage if documents need to be stored
+- Supabase APIs/client libraries where appropriate
+
+The application should use environment variables for Supabase configuration.
+
+Example frontend environment variables:
+
+VITE_SUPABASE_URL=
+VITE_SUPABASE_ANON_KEY=
+
+Example backend environment variables:
+
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+
+Never hardcode secrets.
+
+The FastAPI backend should contain the main business logic and rule engine.
+
+The frontend should communicate with FastAPI for core decision-support functionality.
+
+==================================================
+3. HIGH-LEVEL ARCHITECTURE
+==================================================
+
+Build the following architecture:
+
+React + Vite PWA
+        ↓
+User Interface
+        ↓
+FastAPI Backend
+        ↓
+Core Services
+    ├── User Profile
+    ├── Scheme Rules Engine
+    ├── Scheme Ranking
+    ├── Finance Engine
+    ├── Document Engine
+    ├── Partner Router
+    ├── AI/NLP Service
+    └── Sync/Data Freshness
+        ↓
+Supabase PostgreSQL
+        ↓
+Verified Scheme + Partner Data
+
+AI/NLP and optional RAG/OCR services should operate around the deterministic core.
+
+The architecture should remain modular so AI providers can be replaced later.
+
+==================================================
+4. SUPABASE DATABASE
+==================================================
+
+Use Supabase PostgreSQL as the persistent database.
+
+Do NOT create a separate database using Docker.
+
+Design proper relational tables.
+
+At minimum, consider:
+
+users
+profiles
+schemes
+scheme_rules
+scheme_documents
+partners
+partner_scheme_compatibility
+scheme_sources
+data_versions
+user_progress
+document_status
+saved_recommendations
+
+Use UUID primary keys where appropriate.
+
+The scheme dataset should support fields such as:
+
+- scheme name
+- beneficiary category
+- purpose
+- minimum project/loan amount
+- maximum project/loan amount
+- interest rate
+- moratorium
+- repayment period
+- repayment frequency
+- income requirements
+- age requirements
+- education conditions
+- project/business conditions
+- required documents
+- partner/category compatibility
+- official source
+- effective date
+- last verified date
+- version
+
+Partner data should support:
+
+- partner name
+- partner type
+- address
+- latitude
+- longitude
+- supported schemes/categories
+- authorization status
+- operational status where officially available
+- fund-utilization eligibility where officially available
+- NPA/overdue-related status ONLY when official data exists
+- official source
+- verification date
+- freshness/version
+
+If information is unavailable, store/display:
+
+“Not available / Verify with partner.”
+
+NEVER fabricate missing values.
+
+==================================================
+5. RULE-BASED ELIGIBILITY ENGINE
+==================================================
+
+This is one of the most important parts of the application.
+
+Implement eligibility as deterministic business rules.
+
+The basic evaluation flow is:
+
+STRUCTURED USER PROFILE
+↓
+Beneficiary/category eligible?
+↓
+Purpose/project eligible?
+↓
+Amount within scheme limit?
+↓
+Income/education/other conditions satisfied?
+↓
+ELIGIBLE / NOT ELIGIBLE
+↓
+Record explicit reasons
+
+The engine should return structured results such as:
+
+{
+  "eligible": true,
+  "scheme_id": "...",
+  "reasons": [
+    "...",
+    "...",
+    "..."
+  ],
+  "failed_conditions": []
+}
+
+For an ineligible scheme, explain exactly which rule failed.
+
+Example:
+
+NOT ELIGIBLE
+
+Reason:
+Requested loan amount ₹8,00,000 exceeds the maximum scheme limit of ₹5,00,000.
+
+Do not return vague AI-generated explanations.
+
+The rules should be auditable.
+
+Each rule should ideally have:
+- rule ID
+- field
+- operator
+- expected value
+- explanation
+- source/version
+
+==================================================
+6. SCHEME MATCHING AND RANKING
+==================================================
+
+After evaluating eligibility, identify suitable schemes.
+
+Ranking can consider:
+
+- Loan/project amount fit
+- Project/education compatibility
+- Loan type
+- Benefits/conditions
+- Moratorium
+- Repayment terms
+- Suitable partner availability
+
+Do NOT use fake AI percentages such as:
+
+“95% match”
+
+unless an actual validated scoring methodology exists.
+
+Instead show:
+
+“Why this scheme?”
+
+Example:
+
+Why this scheme?
+
+✓ Your requested amount falls within the scheme limit.
+✓ Your project type is supported.
+✓ Your beneficiary category matches.
+✓ The repayment terms are compatible.
+
+The ranking logic should be deterministic and explainable.
+
+==================================================
+7. FINANCIAL CALCULATOR
+==================================================
+
+Build a deterministic financial calculation engine.
+
+Input:
+
+- Loan amount
+- Interest rate
+- Repayment period
+- Moratorium
+- Repayment frequency
+
+Output:
+
+- Estimated repayment/EMI where applicable
+- Total interest
+- Total repayment
+- Plain-language explanation
+
+IMPORTANT:
+
+Financial calculations MUST NOT be generated by an LLM.
+
+Use normal deterministic mathematical functions.
+
+Separate:
+
+OFFICIAL SCHEME PARAMETERS
+
+from
+
+CALCULATED ESTIMATES.
+
+If a scheme does not use monthly repayment, do not falsely represent it as a monthly EMI scheme.
+
+Display the official repayment frequency and terms.
+
+Handle moratorium according to the scheme data.
+
+The finance engine should be independently testable with unit tests.
+
+==================================================
+8. DOCUMENT READINESS
+==================================================
+
+For the selected scheme:
+
+SCHEME
+↓
+DOCUMENT REQUIREMENTS
+↓
+PERSONALIZED CHECKLIST
+↓
+AVAILABLE / MISSING
+↓
+OPTIONAL OCR
+↓
+CONSISTENCY FLAGS
+↓
+FINAL VERIFICATION THROUGH OFFICIAL PROCESS/PARTNER
+
+The MVP must at minimum support:
+
+- Required documents
+- Available documents
+- Missing documents
+- Completion status
+
+Optional OCR can later inspect uploaded documents for consistency.
+
+IMPORTANT:
+
+OCR is assistance only.
+
+Do NOT claim that the system authenticates caste certificates, income certificates, or other official documents unless an actual official verification mechanism exists.
+
+==================================================
+9. AI / NLP
+==================================================
+
+AI should be used as an assistance layer rather than the authority.
+
+Possible responsibilities:
+
+1. Natural-language understanding
+2. Extract structured fields from user messages
+3. Translation
+4. Explanation
+5. Grounded Q&A
+6. Optional voice/STT processing
+
+Example:
+
+User:
+
+“I need around three lakh rupees to start a dairy business. My annual income is around two lakh.”
+
+AI/NLP extracts:
+
+{
+  "purpose": "business",
+  "project_type": "dairy business",
+  "requested_amount": 300000,
+  "annual_income": 200000
+}
+
+Show this to the user:
+
+“I understood:
+
+Purpose: Business
+Project: Dairy business
+Requested amount: ₹3,00,000
+Annual income: ₹2,00,000
+
+Is this correct?”
+
+Only after confirmation should the rules engine evaluate schemes.
+
+AI MUST NOT:
+- decide eligibility
+- invent scheme rules
+- invent interest rates
+- calculate official repayment terms
+- invent partners
+- claim loan approval
+- claim official verification
+
+==================================================
+10. RAG / GROUNDED Q&A
+==================================================
+
+Implement RAG only for answering questions about the curated scheme information.
+
+Potential stack:
+
+- Qdrant + embeddings
+
+OR, if simplifying the MVP, use a vector-search solution compatible with the existing Supabase architecture.
+
+The important requirement is that responses must be grounded in the curated official corpus.
+
+Example:
+
+User:
+“What documents are required?”
+
+The answer should come from the stored scheme data/source material.
+
+Do not let the model freely hallucinate government scheme information.
+
+Every important scheme explanation should expose its source.
+
+==================================================
+11. MULTILINGUAL SUPPORT
+==================================================
+
+Initial languages:
+
+- English
+- Hindi
+- Marathi
+
+The architecture must NOT create separate eligibility logic for each language.
+
+Correct architecture:
+
+English / Hindi / Marathi
+↓
+Text / Voice
+↓
+Normalization + NLP/STT
+↓
+Common Structured Profile
+↓
+ONE Rule Engine
+↓
+Same Eligibility Logic
+↓
+Explanation in User Language
+
+The underlying eligibility result must remain the same regardless of language.
+
+The UI should allow language switching.
+
+==================================================
+12. PARTNER ROUTING
+==================================================
+
+Build an intelligent channel-partner router.
+
+Input:
+
+- User location
+- Selected scheme
+
+Routing flow:
+
+USER LOCATION + SELECTED SCHEME
+↓
+Is partner authorized?
+↓
+Is partner compatible with scheme/category?
+↓
+Is operational status verified?
+↓
+Check fund-utilization/NPA information ONLY if official data exists
+↓
+Geospatial ranking
+↓
+Suitable authorized partners
+
+The system should NOT simply select the nearest partner.
+
+A nearby but incompatible partner should be excluded.
+
+Example:
+
+Partner A:
+Distance: 2 km
+Authorization: Verified
+Scheme compatibility: No
+
+→ EXCLUDE
+
+Partner B:
+Distance: 5 km
+Authorization: Verified
+Scheme compatibility: Yes
+
+→ Suitable partner
+
+Partner status rules:
+
+Authorized + compatible + verified operational
+→ Can rank normally
+
+Verified unavailable
+→ Do not route as active
+
+Status unavailable
+→ Do not infer
+→ Display “Not verified — confirm”
+
+Fund/NPA/overdue status unavailable
+→ Do not infer
+→ Display “Status not available”
+
+DO NOT create a fake universal “partner approval limit”.
+
+==================================================
+13. POSTGIS / GEOSPATIAL DATA
+==================================================
+
+Because the database is Supabase PostgreSQL, use PostgreSQL spatial functionality/PostGIS if available through the Supabase environment.
+
+Use latitude/longitude for partner locations.
+
+The system should calculate geographic distance and rank suitable partners.
+
+The partner routing logic should prioritize:
+
+1. Authorization
+2. Scheme/category compatibility
+3. Verified operational status
+4. Geography
+
+Not merely distance.
+
+==================================================
+14. LOW-CONNECTIVITY / OFFLINE MODE
+==================================================
+
+The application should be a PWA.
+
+Use:
+
+- Service Worker
+- IndexedDB
+- Local caching
+- Queued sync
+
+The goal is NOT to claim that the entire application works offline.
+
+Instead:
+
+Offline/low connectivity should support:
+
+✓ Basic profile entry
+✓ Core rule matching using cached rules
+✓ Cached scheme information
+✓ Financial calculation
+✓ Document checklist
+✓ Saved progress
+✓ Queued actions
+
+Connectivity is required for:
+
+- Latest scheme updates
+- Live partner status
+- Live maps/directions
+- Online AI/RAG
+- Official online submission
+
+Flow:
+
+ONLINE
+↓
+Sync verified scheme/partner data
+↓
+LOCAL CACHE / INDEXEDDB
+↓
+CONNECTION DROPS
+↓
+Profile + matching + finance + checklist continue
+↓
+Pending actions queued
+↓
+CONNECTION RETURNS
+↓
+Sync + refresh official data + live functions
+
+Show the user the freshness/version of cached information.
+
+Do not build full offline maps for the MVP.
+
+==================================================
+15. DATA SOURCE AND VERSION CONTROL
+==================================================
+
+Every scheme should have:
+
+- Official source
+- Effective date
+- Last verified date
+- Version
+
+Data flow:
+
+OFFICIAL SOURCE/DOCUMENT
+↓
+DATA INGESTION
+↓
+STRUCTURED PARAMETERS
+↓
+VERSION + EFFECTIVE DATE + SOURCE + VERIFICATION DATE
+↓
+ACTIVE VERSION USED BY RULE ENGINE
+↓
+USER SEES DATA FRESHNESS
+
+Do not silently overwrite historical scheme values.
+
+If official sources conflict, prefer current official material and retain version history.
+
+Partner status should include verification timestamp/source.
+
+==================================================
+16. SECURITY AND PRIVACY
+==================================================
+
+Implement basic security properly.
+
+Requirements:
+
+- Collect only information necessary for matching/application preparation
+- Authentication where user profiles are saved
+- Authorization for private data
+- Secure document storage
+- HTTPS in deployment
+- Environment variables for secrets
+- Never expose Supabase service-role keys to frontend
+- Protect user documents
+- Do not send sensitive documents to unrelated AI services
+- Keep rules auditable
+- Show official source/freshness
+- Clearly separate estimates from official terms
+
+Never claim loan sanction/approval unless an actual authorized status integration exists.
+
+==================================================
+17. UI / UX
+==================================================
+
+Build a polished, modern, mobile-first interface.
+
+Primary screen flow:
+
+HOME
+↓
+LANGUAGE
+↓
+NEED / REQUIREMENT
+↓
+PROFILE CONFIRMATION
+↓
+SCHEME RECOMMENDATIONS
+↓
+FINANCE
+↓
+DOCUMENTS
+↓
+PARTNER
+↓
+OFFICIAL ACTION
+
+The UI should feel like a real public-service/financial-assistance platform, not a generic AI chatbot.
+
+The recommendation page should show:
+
+- Scheme name
+- Why it matches
+- Key conditions
+- Financial parameters
+- Official source
+- Data freshness
+
+Finance page:
+
+- Amount
+- Rate
+- Tenure
+- Moratorium
+- Estimated repayment
+- Disclaimer
+
+Documents:
+
+- Required
+- Available
+- Missing
+- Optional OCR
+
+Partner:
+
+- Name
+- Type
+- Authorization
+- Compatibility
+- Verification status
+- Distance
+- Contact
+- Directions
+
+Action:
+
+- Official application/information route
+- Contact
+- Directions
+- Official source
+
+==================================================
+18. MVP DEMO FLOW
+==================================================
+
+The primary demonstration should be:
+
+SC entrepreneur wants ₹3 lakh for a dairy business.
+
+Flow:
+
+1. Open UdyamSetu
+2. Select language
+3. Select Business/Entrepreneurship
+4. Enter or speak requirement
+5. AI/NLP extracts structured profile
+6. User confirms profile
+7. Deterministic rule engine evaluates schemes
+8. Suitable schemes are displayed with explicit reasons
+9. User selects a scheme
+10. Finance calculator shows applicable parameters and estimated repayment
+11. Personalized document checklist is displayed
+12. Partner router finds suitable authorized partners
+13. A closer but incompatible partner is excluded
+14. A suitable verified partner is displayed
+15. Official next action is shown
+16. Turn internet connection off
+17. Cached matching, finance and checklist continue to work
+18. Turn internet back on
+19. Application synchronizes and refreshes official information
+
+This should be the polished end-to-end demo.
+
+==================================================
+19. TESTING
+==================================================
+
+Create tests for:
+
+1. Eligible entrepreneur
+→ Correct scheme + reasons
+
+2. Ineligible user
+→ Rejected scheme + reason
+
+3. Amount above scheme limit
+→ Limit explained
+
+4. Multiple eligible schemes
+→ Deterministic ranking + explanation
+
+5. Nearby incompatible partner
+→ Excluded despite being closer
+
+6. Nearest partner unavailable
+→ Not routed if verified unavailable
+
+7. Unknown partner status
+→ “Not verified”; never guessed
+
+8. Different languages
+→ Same underlying eligibility result
+
+9. Finance
+→ Independently verified calculation
+
+10. Offline mode
+→ Cached matching/finance/checklist works
+
+11. Reconnect
+→ Queued state synchronizes
+
+12. Stale data
+→ Freshness/version is visible
+
+==================================================
+20. PROJECT STRUCTURE
+==================================================
+
+Prefer a clean monorepo structure such as:
+
+udyamsetu/
+│
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── services/
+│   │   ├── hooks/
+│   │   ├── lib/
+│   │   ├── types/
+│   │   └── offline/
+│   ├── public/
+│   └── package.json
+│
+├── backend/
+│   ├── app/
+│   │   ├── api/
+│   │   ├── models/
+│   │   ├── schemas/
+│   │   ├── services/
+│   │   │   ├── rules/
+│   │   │   ├── finance/
+│   │   │   ├── documents/
+│   │   │   ├── partners/
+│   │   │   ├── ai/
+│   │   │   └── rag/
+│   │   ├── db/
+│   │   └── main.py
+│   ├── tests/
+│   └── requirements.txt
+│
+├── supabase/
+│   ├── migrations/
+│   └── seed/
+│
+├── docs/
+│
+├── .env.example
+├── README.md
+└── .gitignore
+
+Do not create a PostgreSQL Docker service.
+
+Supabase is the database/backend platform.
+
+==================================================
+21. DEVELOPMENT PRIORITY
+==================================================
+
+Implement in this order:
+
+PHASE 1
+Supabase database schema + seed data
+
+PHASE 2
+Deterministic eligibility/rule engine
+
+PHASE 3
+Financial calculator
+
+PHASE 4
+Document checklist
+
+PHASE 5
+Partner routing
+
+PHASE 6
+FastAPI APIs
+
+PHASE 7
+React/Vite frontend and complete user journey
+
+PHASE 8
+Multilingual support
+
+PHASE 9
+AI/NLP structured extraction
+
+PHASE 10
+RAG grounded Q&A
+
+PHASE 11
+PWA + IndexedDB + offline sync
+
+PHASE 12
+Optional OCR/voice
+
+PHASE 13
+Testing and edge cases
+
+PHASE 14
+UI polish and deployment
+
+The deterministic core should work even if the AI service is unavailable.
+
+==================================================
+22. WHAT NOT TO BUILD
+==================================================
+
+Do NOT waste MVP development time on:
+
+- Custom ML recommendation models
+- Loan approval prediction
+- NPA prediction
+- Blockchain
+- Complex microservices
+- Full offline maps
+- All Indian languages
+- Full document authenticity verification
+- Fake government APIs
+- Fake live partner feeds
+- Fake approval limits
+- Fake match percentages
+- Analytics dashboards before the core journey works
+
+Do not pretend an unavailable API or data feed exists.
+
+Use a version-controlled verified dataset/data adapter for prototype partner information when live official data is unavailable.
+
+==================================================
+23. IMPORTANT PRODUCT PRINCIPLE
+==================================================
+
+The system must be trustworthy.
+
+The application should always distinguish:
+
+1. Official information
+2. Deterministic calculations
+3. Rule-engine decisions
+4. AI-generated explanations
+5. User-provided information
+6. Cached/stale information
+
+If information is unknown, explicitly say:
+
+“Not available — verify with the official source/partner.”
+
+Never invent information to make the demo look more complete.
+
+==================================================
+24. FINAL DELIVERABLE
+==================================================
+
+Build a complete runnable prototype.
+
+It should include:
+
+- React + Vite PWA
+- Tailwind UI
+- FastAPI backend
+- Supabase PostgreSQL database
+- Supabase authentication if needed
+- Supabase Storage if documents are implemented
+- Deterministic scheme eligibility engine
+- Explainable scheme ranking
+- Deterministic financial calculator
+- Document readiness checklist
+- Geospatial partner routing
+- English/Hindi/Marathi architecture
+- AI/NLP extraction
+- Grounded scheme Q&A
+- PWA offline caching
+- IndexedDB saved progress
+- Sync mechanism
+- Data version/freshness indicators
+- Tests
+- Seed/demo data
+- README
+- .env.example
+
+MOST IMPORTANT DATABASE CLARIFICATION:
+
+PostgreSQL = SUPABASE.
+
+Do not create PostgreSQL using Docker.
+Do not create docker-compose just for the database.
+Do not ask the developer to manually install PostgreSQL.
+
+The project should connect to Supabase through environment variables and use Supabase's managed PostgreSQL database.
+
+Build the core system so that it can be run locally with:
+
+Frontend:
+npm install
+npm run dev
+
+Backend:
+Python virtual environment
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+
+Database:
+Supabase project configured through environment variables.
+
+Provide clear setup instructions for creating/configuring the Supabase project, running migrations, seeding demo data, configuring environment variables, and starting frontend/backend.
+
+The final result should be a genuinely functional end-to-end prototype, not just a frontend mockup.
