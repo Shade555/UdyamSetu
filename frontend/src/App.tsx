@@ -1,8 +1,11 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useAuth } from "./context/AuthContext";
+import { ChatbotProvider } from "./context/ChatbotContext";
+import { useChatbotContext } from "./hooks/useChatbotContext";
 import { hasCompletedOnboarding } from "./lib/supabase";
 import AppShell from "./components/AppShell";
+import ContextAwareChatbot from "./components/ContextAwareChatbot";
 
 // Auth Pages
 import Login from "./pages/Login";
@@ -83,26 +86,14 @@ function HomeRoute({ activeStep }: { activeStep?: number }) {
   );
 }
 
-function App() {
-  const { session, loading } = useAuth();
-  const [isReady, setIsReady] = useState(false);
-
-  useEffect(() => {
-    if (!loading) {
-      setIsReady(true);
-    }
-  }, [loading]);
-
-  if (!isReady) {
-    return (
-      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-accent-200 border-t-accent-600 rounded-full animate-spin" />
-      </div>
-    );
-  }
+function AppContent() {
+  const { session } = useAuth();
+  useChatbotContext();
 
   return (
-    <Routes>
+    <>
+      <ContextAwareChatbot />
+      <Routes>
       {/* Auth Routes */}
       <Route
         path="/login"
@@ -239,6 +230,32 @@ function App() {
         element={<Navigate to={session ? "/entry" : "/login"} replace />}
       />
     </Routes>
+    </>
+  );
+}
+
+function App() {
+  const { loading } = useAuth();
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    if (!loading) {
+      setIsReady(true);
+    }
+  }, [loading]);
+
+  if (!isReady) {
+    return (
+      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-accent-200 border-t-accent-600 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <ChatbotProvider>
+      <AppContent />
+    </ChatbotProvider>
   );
 }
 

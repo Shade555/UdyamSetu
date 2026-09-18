@@ -42,7 +42,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50 flex flex-col justify-center items-center px-4 py-12">
+    <div className="min-h-screen bg-neutral-900 flex flex-col justify-center items-center px-4 py-12">
       <motion.div
         className="w-full max-w-md"
         variants={containerVariants}
@@ -51,10 +51,10 @@ export default function Login() {
       >
         {/* Header */}
         <motion.div className="text-center mb-8" variants={itemVariants}>
-          <h1 className="text-4xl md:text-5xl font-bold font-display text-neutral-900 mb-3">
+          <h1 className="text-4xl md:text-5xl font-bold font-display text-neutral-50 mb-3">
             Welcome back
           </h1>
-          <p className="text-neutral-600">Sign in to continue your journey</p>
+          <p className="text-neutral-400">Sign in to continue your journey</p>
         </motion.div>
 
         {/* Form */}
@@ -66,35 +66,35 @@ export default function Login() {
           {/* Error Message */}
           {(error || authError) && (
             <motion.div
-              className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3"
+              className="bg-red-900/20 border border-red-700/50 rounded-lg p-4 flex items-start gap-3"
               variants={itemVariants}
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
             >
               <AlertCircle
                 size={18}
-                className="text-red-600 mt-0.5 flex-shrink-0"
+                className="text-red-400 mt-0.5 flex-shrink-0"
               />
-              <p className="text-sm text-red-700">{error || authError}</p>
+              <p className="text-sm text-red-300">{error || authError}</p>
             </motion.div>
           )}
 
           {/* Email */}
           <motion.div variants={itemVariants}>
-            <label className="block text-sm font-semibold text-neutral-700 mb-2">
+            <label className="block text-sm font-semibold text-neutral-300 mb-2">
               Email
             </label>
             <div className="relative">
               <Mail
                 size={18}
-                className="absolute left-3 top-3.5 text-neutral-400"
+                className="absolute left-3 top-3.5 text-neutral-500"
               />
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="input-base pl-10"
+                className="w-full px-4 py-3 bg-neutral-800 border-2 border-neutral-700 rounded-lg text-neutral-50 placeholder-neutral-600 focus:outline-none focus:border-neutral-600 focus:ring-2 focus:ring-neutral-700 transition-all pl-10"
                 disabled={loading}
               />
             </div>
@@ -102,20 +102,20 @@ export default function Login() {
 
           {/* Password */}
           <motion.div variants={itemVariants}>
-            <label className="block text-sm font-semibold text-neutral-700 mb-2">
+            <label className="block text-sm font-semibold text-neutral-300 mb-2">
               Password
             </label>
             <div className="relative">
               <Lock
                 size={18}
-                className="absolute left-3 top-3.5 text-neutral-400"
+                className="absolute left-3 top-3.5 text-neutral-500"
               />
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="input-base pl-10"
+                className="w-full px-4 py-3 bg-neutral-800 border-2 border-neutral-700 rounded-lg text-neutral-50 placeholder-neutral-600 focus:outline-none focus:border-neutral-600 focus:ring-2 focus:ring-neutral-700 transition-all pl-10"
                 disabled={loading}
               />
             </div>
@@ -125,7 +125,7 @@ export default function Login() {
           <motion.button
             type="submit"
             disabled={loading}
-            className="btn-primary w-full flex items-center justify-center gap-2 py-4 disabled:opacity-50 mt-6"
+            className="btn-primary w-full flex items-center justify-center gap-2 py-4 disabled:opacity-50 mt-6 bg-neutral-50 text-neutral-900 hover:bg-neutral-200"
             variants={itemVariants}
             whileHover={!loading ? { scale: 1.02 } : {}}
             whileTap={!loading ? { scale: 0.98 } : {}}
@@ -133,7 +133,7 @@ export default function Login() {
             {loading ? (
               <>
                 <motion.div
-                  className="w-4 h-4 border-2 border-white border-t-transparent rounded-full"
+                  className="w-4 h-4 border-2 border-neutral-900 border-t-transparent rounded-full"
                   animate={{ rotate: 360 }}
                   transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                 />
@@ -150,11 +150,11 @@ export default function Login() {
 
         {/* Sign up link */}
         <motion.div className="text-center mt-6" variants={itemVariants}>
-          <p className="text-neutral-600">
+          <p className="text-neutral-400">
             Don't have an account?{" "}
             <Link
               to="/signup"
-              className="text-accent-600 font-semibold hover:text-accent-700"
+              className="text-neutral-200 font-semibold hover:text-neutral-100"
             >
               Sign up
             </Link>
