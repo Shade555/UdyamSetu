@@ -1,18 +1,25 @@
-import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { ArrowRight, Edit2 } from 'lucide-react'
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { ArrowRight, Edit2 } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 interface ProfileConfirmationProps {
-  language: string
-  profile: any
+  language: string;
+  profile: any;
 }
 
-export default function ProfileConfirmation({ profile }: ProfileConfirmationProps) {
-  const navigate = useNavigate()
+export default function ProfileConfirmation({
+  profile,
+}: ProfileConfirmationProps) {
+  const navigate = useNavigate();
+  const { user } = useAuth();
 
   const handleContinue = () => {
-    navigate('/eligibility')
-  }
+    if (user?.id) {
+      localStorage.setItem(`udyamsetu:onboarding-complete:${user.id}`, "true");
+    }
+    navigate("/home");
+  };
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -23,16 +30,16 @@ export default function ProfileConfirmation({ profile }: ProfileConfirmationProp
         delayChildren: 0.2,
       },
     },
-  }
+  };
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.5, ease: 'easeOut' },
+      transition: { duration: 0.5, ease: "easeOut" },
     },
-  }
+  };
 
   return (
     <div className="min-h-screen bg-neutral-50 flex flex-col justify-center items-center px-4 py-12">
@@ -47,7 +54,9 @@ export default function ProfileConfirmation({ profile }: ProfileConfirmationProp
           <h1 className="text-4xl md:text-5xl font-bold font-display text-neutral-900 mb-3">
             Here's what we understood
           </h1>
-          <p className="text-neutral-600">Please verify the information below</p>
+          <p className="text-neutral-600">
+            Please verify the information below
+          </p>
         </motion.div>
 
         {/* Profile Fields */}
@@ -57,48 +66,68 @@ export default function ProfileConfirmation({ profile }: ProfileConfirmationProp
               <motion.div className="card" variants={itemVariants}>
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className="text-sm font-semibold text-neutral-500 uppercase">Purpose</p>
+                    <p className="text-sm font-semibold text-neutral-500 uppercase">
+                      Purpose
+                    </p>
                     <p className="text-lg font-semibold text-neutral-900 mt-1 capitalize">
                       {profile.purpose}
                     </p>
                   </div>
-                  <Edit2 size={18} className="text-neutral-400 cursor-pointer hover:text-accent-600" />
+                  <Edit2
+                    size={18}
+                    className="text-neutral-400 cursor-pointer hover:text-accent-600"
+                  />
                 </div>
               </motion.div>
 
               <motion.div className="card" variants={itemVariants}>
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className="text-sm font-semibold text-neutral-500 uppercase">Project</p>
+                    <p className="text-sm font-semibold text-neutral-500 uppercase">
+                      Project
+                    </p>
                     <p className="text-lg font-semibold text-neutral-900 mt-1 capitalize">
                       {profile.projectType}
                     </p>
                   </div>
-                  <Edit2 size={18} className="text-neutral-400 cursor-pointer hover:text-accent-600" />
+                  <Edit2
+                    size={18}
+                    className="text-neutral-400 cursor-pointer hover:text-accent-600"
+                  />
                 </div>
               </motion.div>
 
               <motion.div className="card" variants={itemVariants}>
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className="text-sm font-semibold text-neutral-500 uppercase">Requested Amount</p>
+                    <p className="text-sm font-semibold text-neutral-500 uppercase">
+                      Requested Amount
+                    </p>
                     <p className="text-lg font-semibold text-neutral-900 mt-1">
-                      ₹{(profile.requestedAmount || 0).toLocaleString('en-IN')}
+                      ₹{(profile.requestedAmount || 0).toLocaleString("en-IN")}
                     </p>
                   </div>
-                  <Edit2 size={18} className="text-neutral-400 cursor-pointer hover:text-accent-600" />
+                  <Edit2
+                    size={18}
+                    className="text-neutral-400 cursor-pointer hover:text-accent-600"
+                  />
                 </div>
               </motion.div>
 
               <motion.div className="card" variants={itemVariants}>
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className="text-sm font-semibold text-neutral-500 uppercase">Annual Income</p>
+                    <p className="text-sm font-semibold text-neutral-500 uppercase">
+                      Annual Income
+                    </p>
                     <p className="text-lg font-semibold text-neutral-900 mt-1">
-                      ₹{(profile.annualIncome || 0).toLocaleString('en-IN')}
+                      ₹{(profile.annualIncome || 0).toLocaleString("en-IN")}
                     </p>
                   </div>
-                  <Edit2 size={18} className="text-neutral-400 cursor-pointer hover:text-accent-600" />
+                  <Edit2
+                    size={18}
+                    className="text-neutral-400 cursor-pointer hover:text-accent-600"
+                  />
                 </div>
               </motion.div>
             </>
@@ -129,5 +158,5 @@ export default function ProfileConfirmation({ profile }: ProfileConfirmationProp
         </motion.div>
       </motion.div>
     </div>
-  )
+  );
 }

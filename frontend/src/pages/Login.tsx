@@ -1,32 +1,32 @@
-import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { Mail, Lock, ArrowRight, AlertCircle } from 'lucide-react'
-import { useAuth } from '../context/AuthContext'
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Mail, Lock, ArrowRight, AlertCircle } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
-  const navigate = useNavigate()
-  const { signIn, loading, error: authError } = useAuth()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
+  const navigate = useNavigate();
+  const { signIn, loading, error: authError } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
+    e.preventDefault();
+    setError("");
 
     if (!email || !password) {
-      setError('Email and password are required')
-      return
+      setError("Email and password are required");
+      return;
     }
 
     try {
-      await signIn(email, password)
-      navigate('/dashboard')
+      await signIn(email, password);
+      navigate("/entry");
     } catch (err: any) {
-      setError(err.message || 'Sign in failed')
+      setError(err.message || "Sign in failed");
     }
-  }
+  };
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -34,12 +34,12 @@ export default function Login() {
       opacity: 1,
       transition: { staggerChildren: 0.1, delayChildren: 0.2 },
     },
-  }
+  };
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
-  }
+  };
 
   return (
     <div className="min-h-screen bg-neutral-50 flex flex-col justify-center items-center px-4 py-12">
@@ -58,7 +58,11 @@ export default function Login() {
         </motion.div>
 
         {/* Form */}
-        <motion.form onSubmit={handleSubmit} className="space-y-4" variants={containerVariants}>
+        <motion.form
+          onSubmit={handleSubmit}
+          className="space-y-4"
+          variants={containerVariants}
+        >
           {/* Error Message */}
           {(error || authError) && (
             <motion.div
@@ -67,16 +71,24 @@ export default function Login() {
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <AlertCircle size={18} className="text-red-600 mt-0.5 flex-shrink-0" />
+              <AlertCircle
+                size={18}
+                className="text-red-600 mt-0.5 flex-shrink-0"
+              />
               <p className="text-sm text-red-700">{error || authError}</p>
             </motion.div>
           )}
 
           {/* Email */}
           <motion.div variants={itemVariants}>
-            <label className="block text-sm font-semibold text-neutral-700 mb-2">Email</label>
+            <label className="block text-sm font-semibold text-neutral-700 mb-2">
+              Email
+            </label>
             <div className="relative">
-              <Mail size={18} className="absolute left-3 top-3.5 text-neutral-400" />
+              <Mail
+                size={18}
+                className="absolute left-3 top-3.5 text-neutral-400"
+              />
               <input
                 type="email"
                 value={email}
@@ -90,9 +102,14 @@ export default function Login() {
 
           {/* Password */}
           <motion.div variants={itemVariants}>
-            <label className="block text-sm font-semibold text-neutral-700 mb-2">Password</label>
+            <label className="block text-sm font-semibold text-neutral-700 mb-2">
+              Password
+            </label>
             <div className="relative">
-              <Lock size={18} className="absolute left-3 top-3.5 text-neutral-400" />
+              <Lock
+                size={18}
+                className="absolute left-3 top-3.5 text-neutral-400"
+              />
               <input
                 type="password"
                 value={password}
@@ -118,7 +135,7 @@ export default function Login() {
                 <motion.div
                   className="w-4 h-4 border-2 border-white border-t-transparent rounded-full"
                   animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                 />
                 Signing in...
               </>
@@ -134,13 +151,16 @@ export default function Login() {
         {/* Sign up link */}
         <motion.div className="text-center mt-6" variants={itemVariants}>
           <p className="text-neutral-600">
-            Don't have an account?{' '}
-            <Link to="/signup" className="text-accent-600 font-semibold hover:text-accent-700">
+            Don't have an account?{" "}
+            <Link
+              to="/signup"
+              className="text-accent-600 font-semibold hover:text-accent-700"
+            >
               Sign up
             </Link>
           </p>
         </motion.div>
       </motion.div>
     </div>
-  )
+  );
 }

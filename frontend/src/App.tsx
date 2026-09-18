@@ -1,74 +1,190 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
-import { useAuth } from './context/AuthContext'
+import { Routes, Route, Navigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useAuth } from "./context/AuthContext";
+import { hasCompletedOnboarding } from "./lib/supabase";
+import AppShell from "./components/AppShell";
 
 // Auth Pages
-import Login from './pages/Login'
-import Signup from './pages/Signup'
-import Dashboard from './pages/Dashboard'
-import Profile from './pages/Profile'
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 
 // Onboarding Pages (Old journey flow moved here)
-import LanguageSelector from './pages/LanguageSelector'
-import NeedSelector from './pages/NeedSelector'
-import RequirementInput from './pages/RequirementInput'
-import ProfileConfirmation from './pages/ProfileConfirmation'
-import EligibilityCheck from './pages/EligibilityCheck'
-import SchemeRecommendation from './pages/SchemeRecommendation'
-import Finance from './pages/Finance'
-import Documents from './pages/Documents'
-import Partner from './pages/Partner'
-import OfficialAction from './pages/OfficialAction'
+import LanguageSelector from "./pages/LanguageSelector";
+import NeedSelector from "./pages/NeedSelector";
+import RequirementInput from "./pages/RequirementInput";
+import ProfileConfirmation from "./pages/ProfileConfirmation";
+import PlaceholderPage from "./pages/PlaceholderPage";
+import HomeWorkflow from "./pages/HomeWorkflow";
 
 // Protected Route Component
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { session, loading } = useAuth()
+  const { session, loading } = useAuth();
 
   if (loading) {
     return (
       <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-accent-200 border-t-accent-600 rounded-full animate-spin" />
       </div>
-    )
+    );
   }
 
   if (!session) {
-    return <Navigate to="/login" replace />
+    return <Navigate to="/login" replace />;
   }
 
-  return <>{children}</>
+  return <>{children}</>;
+}
+
+function EntryRoute() {
+  const { user } = useAuth();
+  const [destination, setDestination] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const resolveDestination = async () => {
+      const storageKey = `udyamsetu:onboarding-complete:${user.id}`;
+      const locallyComplete = localStorage.getItem(storageKey) === "true";
+
+      if (locallyComplete || (await hasCompletedOnboarding(user.id))) {
+        localStorage.setItem(storageKey, "true");
+        setDestination("/home");
+      } else {
+        setDestination("/onboarding/language");
+      }
+    };
+
+    resolveDestination().catch((error) => {
+      console.error("Could not resolve onboarding state:", error);
+      setDestination("/onboarding/language");
+    });
+  }, [user]);
+
+  if (!destination) {
+    return <div className="min-h-screen bg-neutral-50" />;
+  }
+
+  return <Navigate to={destination} replace />;
+}
+
+function ShellRoute({ title }: { title: string }) {
+  return (
+    <AppShell>
+      <PlaceholderPage title={title} />
+    </AppShell>
+  );
+}
+
+function HomeRoute({ activeStep }: { activeStep?: number }) {
+  return (
+    <AppShell>
+      <HomeWorkflow activeStep={activeStep} />
+    </AppShell>
+  );
 }
 
 function App() {
-  const { session, loading } = useAuth()
-  const [isReady, setIsReady] = useState(false)
+  const { session, loading } = useAuth();
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     if (!loading) {
-      setIsReady(true)
+      setIsReady(true);
     }
-  }, [loading])
+  }, [loading]);
 
   if (!isReady) {
     return (
       <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-accent-200 border-t-accent-600 rounded-full animate-spin" />
       </div>
-    )
+    );
   }
 
   return (
     <Routes>
       {/* Auth Routes */}
-      <Route path="/login" element={session ? <Navigate to="/dashboard" /> : <Login />} />
-      <Route path="/signup" element={session ? <Navigate to="/dashboard" /> : <Signup />} />
-
-      {/* Dashboard & Profile */}
       <Route
-        path="/dashboard"
+        path="/login"
+        element={session ? <Navigate to="/entry" /> : <Login />}
+      />
+      <Route
+        path="/signup"
+        element={session ? <Navigate to="/entry" /> : <Signup />}
+      />
+
+      <Route
+        path="/entry"
         element={
           <ProtectedRoute>
-            <Dashboard />
+            <EntryRoute />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Dashboard & Profile */}
+      <Route path="/dashboard" element={<Navigate to="/entry" replace />} />
+      <Route
+        path="/home"
+        element={
+          <ProtectedRoute>
+            <HomeRoute />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/home/scheme-recommendations"
+        element={
+          <ProtectedRoute>
+            <HomeRoute activeStep={5} />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/home/scheme-details"
+        element={
+          <ProtectedRoute>
+            <HomeRoute activeStep={6} />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/home/emi-calculator"
+        element={
+          <ProtectedRoute>
+            <HomeRoute activeStep={7} />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/home/partner-locator"
+        element={
+          <ProtectedRoute>
+            <HomeRoute activeStep={8} />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/home/partner-eligibility"
+        element={
+          <ProtectedRoute>
+            <HomeRoute activeStep={9} />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/home/official-action"
+        element={
+          <ProtectedRoute>
+            <HomeRoute activeStep={10} />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/applied-schemes"
+        element={
+          <ProtectedRoute>
+            <ShellRoute title="Applied Schemes" />
           </ProtectedRoute>
         }
       />
@@ -76,7 +192,9 @@ function App() {
         path="/profile"
         element={
           <ProtectedRoute>
-            <Profile />
+            <AppShell>
+              <PlaceholderPage title="Profile" />
+            </AppShell>
           </ProtectedRoute>
         }
       />
@@ -115,60 +233,13 @@ function App() {
         }
       />
 
-      {/* Journey Flow (Protected) */}
-      <Route
-        path="/eligibility"
-        element={
-          <ProtectedRoute>
-            <EligibilityCheck language="en" profile={null} />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/scheme"
-        element={
-          <ProtectedRoute>
-            <SchemeRecommendation language="en" profile={null} />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/finance"
-        element={
-          <ProtectedRoute>
-            <Finance language="en" />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/documents"
-        element={
-          <ProtectedRoute>
-            <Documents language="en" />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/partner"
-        element={
-          <ProtectedRoute>
-            <Partner language="en" />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/action"
-        element={
-          <ProtectedRoute>
-            <OfficialAction language="en" />
-          </ProtectedRoute>
-        }
-      />
-
       {/* Fallback */}
-      <Route path="/" element={<Navigate to={session ? '/dashboard' : '/login'} replace />} />
+      <Route
+        path="/"
+        element={<Navigate to={session ? "/entry" : "/login"} replace />}
+      />
     </Routes>
-  )
+  );
 }
 
-export default App
+export default App;

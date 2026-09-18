@@ -1,30 +1,32 @@
-import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { Check } from 'lucide-react'
-import { useState } from 'react'
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Check } from "lucide-react";
+import { useState } from "react";
 
 interface LanguageSelectorProps {
-  onSelectLanguage: (lang: string) => void
+  onSelectLanguage: (lang: string) => void;
 }
 
-export default function LanguageSelector({ onSelectLanguage }: LanguageSelectorProps) {
-  const navigate = useNavigate()
-  const [selectedLang, setSelectedLang] = useState<string | null>(null)
+export default function LanguageSelector({
+  onSelectLanguage,
+}: LanguageSelectorProps) {
+  const navigate = useNavigate();
+  const [selectedLang, setSelectedLang] = useState<string | null>(null);
 
   const languages = [
-    { code: 'en', label: 'English', nativeName: 'English' },
-    { code: 'hi', label: 'हिन्दी', nativeName: 'Hindi' },
-    { code: 'mr', label: 'मराठी', nativeName: 'Marathi' },
-  ]
+    { code: "en", label: "English", nativeName: "English" },
+    { code: "hi", label: "हिन्दी", nativeName: "Hindi" },
+    { code: "mr", label: "मराठी", nativeName: "Marathi" },
+  ];
 
   const handleSelectLanguage = (code: string) => {
-    setSelectedLang(code)
-    onSelectLanguage(code)
+    setSelectedLang(code);
+    onSelectLanguage(code);
 
     setTimeout(() => {
-      navigate('/need')
-    }, 600)
-  }
+      navigate("/onboarding/need");
+    }, 600);
+  };
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -35,16 +37,16 @@ export default function LanguageSelector({ onSelectLanguage }: LanguageSelectorP
         delayChildren: 0.2,
       },
     },
-  }
+  };
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.5, ease: 'easeOut' },
+      transition: { duration: 0.5, ease: "easeOut" },
     },
-  }
+  };
 
   return (
     <div className="min-h-screen bg-neutral-50 flex flex-col justify-center items-center px-4 py-12">
@@ -70,8 +72,8 @@ export default function LanguageSelector({ onSelectLanguage }: LanguageSelectorP
               onClick={() => handleSelectLanguage(lang.code)}
               className={`w-full py-4 px-6 rounded-xl font-semibold text-lg transition-all duration-300 relative overflow-hidden ${
                 selectedLang === lang.code
-                  ? 'bg-accent-600 text-white shadow-lg'
-                  : 'bg-white border-2 border-neutral-200 text-neutral-900 hover:border-accent-500'
+                  ? "bg-accent-600 text-white shadow-lg"
+                  : "bg-white border-2 border-neutral-200 text-neutral-900 hover:border-accent-500"
               }`}
               variants={itemVariants}
               whileHover={{ scale: 1.02 }}
@@ -86,7 +88,7 @@ export default function LanguageSelector({ onSelectLanguage }: LanguageSelectorP
                   <motion.div
                     initial={{ scale: 0, rotate: -180 }}
                     animate={{ scale: 1, rotate: 0 }}
-                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
                   >
                     <Check size={20} />
                   </motion.div>
@@ -105,5 +107,5 @@ export default function LanguageSelector({ onSelectLanguage }: LanguageSelectorP
         </motion.p>
       </motion.div>
     </div>
-  )
+  );
 }
