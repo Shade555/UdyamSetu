@@ -1,4 +1,4 @@
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 
 const steps = [
@@ -27,13 +27,23 @@ const steps = [
 ];
 
 const schemes = [
-  "Daily Entrepreneurship Development Scheme",
-  "Stand Up India Scheme",
-  "PMEGP Scheme",
+  { schemeId: "MFS", schemeName: "Micro Finance Scheme (MFS)" },
+  { schemeId: "TERM_LOAN", schemeName: "Term Loan" },
+  {
+    schemeId: "AMY",
+    schemeName: "Aajeevika Micro-Finance Yojana (AMY)",
+  },
+  { schemeId: "UNY", schemeName: "Udyam Nidhi Yojana (UNY)" },
+  { schemeId: "ELS", schemeName: "Educational Loan Scheme (ELS)" },
 ];
 
 export default function HomeWorkflow({ activeStep }: { activeStep?: number }) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const selectedScheme = location.state as {
+    schemeId: string;
+    schemeName: string;
+  } | null;
   const currentIndex = Math.max(
     0,
     steps.findIndex((step) => step.number === activeStep),
@@ -47,7 +57,7 @@ export default function HomeWorkflow({ activeStep }: { activeStep?: number }) {
           <button
             type="button"
             className="mb-5 flex items-center gap-2 text-sm font-medium text-neutral-600 hover:text-neutral-900"
-            onClick={() => navigate("/home")}
+            onClick={() => navigate("/home", { state: selectedScheme })}
           >
             <ArrowLeft size={16} />
             Back to Home
@@ -67,7 +77,9 @@ export default function HomeWorkflow({ activeStep }: { activeStep?: number }) {
             type="button"
             className="btn-secondary flex items-center gap-2"
             disabled={currentIndex === 0}
-            onClick={() => navigate(steps[currentIndex - 1].path)}
+            onClick={() =>
+              navigate(steps[currentIndex - 1].path, { state: selectedScheme })
+            }
           >
             <ArrowLeft size={16} />
             Previous
@@ -76,7 +88,9 @@ export default function HomeWorkflow({ activeStep }: { activeStep?: number }) {
             type="button"
             className="btn-primary flex items-center gap-2"
             disabled={currentIndex === steps.length - 1}
-            onClick={() => navigate(steps[currentIndex + 1].path)}
+            onClick={() =>
+              navigate(steps[currentIndex + 1].path, { state: selectedScheme })
+            }
           >
             Next
             <ArrowRight size={16} />
@@ -109,16 +123,23 @@ export default function HomeWorkflow({ activeStep }: { activeStep?: number }) {
         <div className="grid gap-4 md:grid-cols-3">
           {schemes.map((scheme) => (
             <button
-              key={scheme}
+              key={scheme.schemeId}
               type="button"
               className="card text-left hover:border-accent-400"
-              onClick={() => navigate("/home/scheme-details")}
+              onClick={() =>
+                navigate("/home/scheme-details", {
+                  state: {
+                    schemeId: scheme.schemeId,
+                    schemeName: scheme.schemeName,
+                  },
+                })
+              }
             >
               <span className="text-sm font-semibold text-accent-700">
                 Recommended scheme
               </span>
               <span className="mt-3 block font-bold text-neutral-900">
-                {scheme}
+                {scheme.schemeName}
               </span>
               <span className="mt-5 block text-sm text-accent-700">
                 View details <ArrowRight className="inline" size={15} />
