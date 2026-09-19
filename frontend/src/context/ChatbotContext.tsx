@@ -198,18 +198,58 @@ export function useChatbot() {
 }
 
 // Helper function for text-to-speech
-export async function speakText(text: string, language: string) {
+function speechText(text: string) {
+  return text
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/https?:\/\/\S+/g, ' ')
+    .replace(/[\\`*_~#>|]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+async function playIndicAudio(text: string, language: string): Promise<boolean> {
+  try {
+    const response = await fetch('http://localhost:8000/api/tts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, language }),
+    })
+    if (!response.ok) return false
+    const url = URL.createObjectURL(await response.blob())
+    const audio = new Audio(url)
+    await new Promise<void>((resolve, reject) => {
+      audio.onended = () => resolve()
+      audio.onerror = () => reject(new Error('Audio playback failed'))
+      void audio.play().catch(reject)
+    })
+    URL.revokeObjectURL(url)
+    return true
+  } catch {
+    return false
+  }
+}
+
+function speakWithBrowser(text: string, language: string) {
   if (!('speechSynthesis' in window)) return
-
-  // Cancel any ongoing speech
   window.speechSynthesis.cancel()
-
   const utterance = new SpeechSynthesisUtterance(text)
   utterance.lang = language === 'hi' ? 'hi-IN' : language === 'mr' ? 'mr-IN' : 'en-IN'
   utterance.rate = 0.9
   utterance.pitch = 1
-
   window.speechSynthesis.speak(utterance)
+}
+
+export async function speakText(text: string, language: string) {
+  const cleanText = speechText(text)
+  if (!cleanText) return
+
+  // Indic Parler-TTS is preferred for all three languages, including English.
+  if (await playIndicAudio(cleanText, language)) return
+
+  // Browser speech is only a fallback when the configured service is unavailable.
+  speakWithBrowser(cleanText, language)
 }
 
 // Helper function for speech-to-text

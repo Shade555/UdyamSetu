@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
-from .api import chatbot
+from .api import chatbot, tts
 
 settings = get_settings()
 
@@ -22,6 +22,7 @@ app.add_middleware(
 
 # Include chatbot routes
 app.include_router(chatbot.router)
+app.include_router(tts.router)
 
 
 @app.get("/", tags=["system"])

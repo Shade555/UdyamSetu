@@ -131,8 +131,8 @@ This section supersedes status claims in archived build/chatbot summaries. Compl
 - [x] Safe visible-field detection, validation, auto-fill, confirmation, undo, basic dashboard scheme selection, and workflow navigation commands.
 - [x] Prevent password/PIN values from being sent to or filled by the chatbot.
 - [ ] Translate all product UI strings and apply locale-aware number/currency/date formatting for English, Hindi, and Marathi.
-- [ ] Add the backend TTS proxy that reads `INDIC_TTS_URL` and `INDIC_TTS_API_KEY`, calls the Indic TTS service, and returns audio to the frontend.
-- [ ] Replace browser-only speech output with API audio playback plus a graceful browser/offline fallback.
+- [x] Add the backend TTS proxy that reads `INDIC_TTS_URL` and `INDIC_TTS_API_KEY`, calls the Indic TTS service, and returns audio to the frontend.
+- [x] Prefer Indic Parler-TTS audio playback for English, Hindi, and Marathi; sanitize markdown before speech and retain browser speech only as a fallback.
 - [ ] Decide whether to replace browser speech recognition with hosted STT for consistent Hindi/Marathi input.
 - [ ] Keep the Colab Indic TTS API temporary for demos only; deploy the same service to persistent infrastructure before production.
 
