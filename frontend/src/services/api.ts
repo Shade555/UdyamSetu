@@ -5,41 +5,97 @@
  */
 
 export interface Profile {
-  purpose: string
-  projectType: string
-  requestedAmount: number
-  annualIncome: number
-  location: string
-  rawInput: string
+  purpose: string;
+  projectType: string;
+  requestedAmount: number;
+  annualIncome: number;
+  location: string;
+  rawInput: string;
 }
 
 export interface Scheme {
-  id: string
-  name: string
-  matchReasons: string[]
-  loanRange: string
-  interestRate: string
-  repaymentPeriod: string
-  moratorium: string
-  source: string
-  verified: string
+  id: string;
+  name: string;
+  matchReasons: string[];
+  loanRange: string;
+  interestRate: string;
+  repaymentPeriod: string;
+  moratorium: string;
+  source: string;
+  verified: string;
 }
 
 export interface Partner {
-  id: string
-  name: string
-  distance: string
-  authorized: boolean
-  compatible: boolean
-  verified: boolean
-  address: string
+  id: string;
+  name: string;
+  distance: string;
+  authorized: boolean;
+  compatible: boolean;
+  verified: boolean;
+  address: string;
 }
 
 export interface FinanceCalculation {
-  monthlyEMI: number
-  totalInterest: number
-  totalRepayment: number
-  disclaimer: string
+  monthlyEMI: number;
+  totalInterest: number;
+  totalRepayment: number;
+  disclaimer: string;
+}
+
+export interface EMICalculationRequest {
+  scheme_id: string;
+  loan_amount: number;
+  repayment_period: number;
+  moratorium: number;
+  repayment_frequency?: string;
+  project_cost?: number;
+  lending_channel?: string;
+  interest_case?: string;
+  repayment_started?: boolean;
+  course_period_months?: number;
+}
+
+export interface EMICalculationResponse {
+  scheme_id: string;
+  scheme_name: string;
+  loan_amount: number;
+  annual_interest_rate: number;
+  repayment_period_months: number;
+  repayment_periods: number;
+  repayment_frequency: string;
+  moratorium_months: number;
+  emi: number;
+  total_interest: number;
+  total_repayment: number;
+  schedule: Array<{
+    period: number;
+    date: string | null;
+    payment: number;
+    principal: number;
+    interest: number;
+    remaining_balance: number;
+  }>;
+  calculation_method: string;
+  is_official_term: boolean;
+  assumptions: string[];
+}
+
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8000/api";
+
+export async function calculateEMI(
+  request: EMICalculationRequest,
+): Promise<EMICalculationResponse> {
+  const response = await fetch(`${API_BASE}/emi/calculate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload.detail || "Unable to calculate repayment.");
+  }
+  return payload as EMICalculationResponse;
 }
 
 // API endpoints (will be replaced with real URLs)
@@ -61,16 +117,16 @@ export async function extractProfile(rawText: string): Promise<Profile> {
 
     // Mock implementation
     return {
-      purpose: 'business',
-      projectType: 'dairy business',
+      purpose: "business",
+      projectType: "dairy business",
       requestedAmount: 300000,
       annualIncome: 200000,
-      location: 'Maharashtra',
+      location: "Maharashtra",
       rawInput: rawText,
-    }
+    };
   } catch (error) {
-    console.error('Profile extraction failed:', error)
-    throw error
+    console.error("Profile extraction failed:", error);
+    throw error;
   }
 }
 
@@ -78,7 +134,9 @@ export async function extractProfile(rawText: string): Promise<Profile> {
  * Check eligibility based on profile
  * POST /api/check-eligibility
  */
-export async function checkEligibility(_profile: Profile): Promise<{ eligible: boolean; schemeCount: number; reasons: string[] }> {
+export async function checkEligibility(
+  _profile: Profile,
+): Promise<{ eligible: boolean; schemeCount: number; reasons: string[] }> {
   try {
     // Placeholder for real API call
     // const response = await fetch(`${API_BASE}/check-eligibility`, {
@@ -93,15 +151,15 @@ export async function checkEligibility(_profile: Profile): Promise<{ eligible: b
       eligible: true,
       schemeCount: 3,
       reasons: [
-        'Beneficiary category matches scheme requirements',
-        'Project type is supported under the scheme',
-        'Requested amount is within scheme limits',
-        'Income meets minimum requirements',
+        "Beneficiary category matches scheme requirements",
+        "Project type is supported under the scheme",
+        "Requested amount is within scheme limits",
+        "Income meets minimum requirements",
       ],
-    }
+    };
   } catch (error) {
-    console.error('Eligibility check failed:', error)
-    throw error
+    console.error("Eligibility check failed:", error);
+    throw error;
   }
 }
 
@@ -122,47 +180,55 @@ export async function getSchemes(_profile: Profile): Promise<Scheme[]> {
     // Mock implementation
     return [
       {
-        id: '1',
-        name: 'Prime Minister Employment Generation Programme (PMEGP)',
+        id: "1",
+        name: "Prime Minister Employment Generation Programme (PMEGP)",
         matchReasons: [
-          'Your requested amount falls within the scheme limit',
-          'Your project type is supported',
-          'Your beneficiary category matches',
-          'The repayment terms are compatible',
+          "Your requested amount falls within the scheme limit",
+          "Your project type is supported",
+          "Your beneficiary category matches",
+          "The repayment terms are compatible",
         ],
-        loanRange: '₹10,000 - ₹50,00,000',
-        interestRate: '4% - 6%',
-        repaymentPeriod: 'Up to 15 years',
-        moratorium: 'Up to 2 years',
-        source: 'Ministry of MSME',
-        verified: 'Sep 18, 2026',
+        loanRange: "₹10,000 - ₹50,00,000",
+        interestRate: "4% - 6%",
+        repaymentPeriod: "Up to 15 years",
+        moratorium: "Up to 2 years",
+        source: "Ministry of MSME",
+        verified: "Sep 18, 2026",
       },
       {
-        id: '2',
-        name: 'Pradhan Mantri Mudra Yojana (PMMY)',
-        matchReasons: ['Suitable for small business', 'Quick approval process', 'Flexible repayment terms'],
-        loanRange: '₹50,000 - ₹10,00,000',
-        interestRate: '6% - 8%',
-        repaymentPeriod: 'Up to 5 years',
-        moratorium: 'Up to 6 months',
-        source: 'Ministry of Finance',
-        verified: 'Sep 18, 2026',
+        id: "2",
+        name: "Pradhan Mantri Mudra Yojana (PMMY)",
+        matchReasons: [
+          "Suitable for small business",
+          "Quick approval process",
+          "Flexible repayment terms",
+        ],
+        loanRange: "₹50,000 - ₹10,00,000",
+        interestRate: "6% - 8%",
+        repaymentPeriod: "Up to 5 years",
+        moratorium: "Up to 6 months",
+        source: "Ministry of Finance",
+        verified: "Sep 18, 2026",
       },
       {
-        id: '3',
-        name: 'Stand-Up India Scheme',
-        matchReasons: ['SC/ST category preference', 'Entrepreneurship support', 'Competitive interest rates'],
-        loanRange: '₹10,00,000 - ₹1,00,00,000',
-        interestRate: '5% - 7%',
-        repaymentPeriod: 'Up to 10 years',
-        moratorium: 'Up to 18 months',
-        source: 'Ministry of Finance',
-        verified: 'Sep 18, 2026',
+        id: "3",
+        name: "Stand-Up India Scheme",
+        matchReasons: [
+          "SC/ST category preference",
+          "Entrepreneurship support",
+          "Competitive interest rates",
+        ],
+        loanRange: "₹10,00,000 - ₹1,00,00,000",
+        interestRate: "5% - 7%",
+        repaymentPeriod: "Up to 10 years",
+        moratorium: "Up to 18 months",
+        source: "Ministry of Finance",
+        verified: "Sep 18, 2026",
       },
-    ]
+    ];
   } catch (error) {
-    console.error('Get schemes failed:', error)
-    throw error
+    console.error("Get schemes failed:", error);
+    throw error;
   }
 }
 
@@ -173,7 +239,7 @@ export async function getSchemes(_profile: Profile): Promise<Scheme[]> {
 export async function calculateFinance(
   loanAmount: number,
   interestRate: number,
-  tenure: number
+  tenure: number,
 ): Promise<FinanceCalculation> {
   try {
     // Placeholder for real API call
@@ -185,24 +251,26 @@ export async function calculateFinance(
     // return await response.json()
 
     // Mock implementation - EMI calculation formula
-    const monthlyRate = interestRate / 12 / 100
-    const numberOfPayments = tenure * 12
+    const monthlyRate = interestRate / 12 / 100;
+    const numberOfPayments = tenure * 12;
     const monthlyEMI = Math.round(
-      (loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numberOfPayments))) /
-        (Math.pow(1 + monthlyRate, numberOfPayments) - 1)
-    )
-    const totalRepayment = monthlyEMI * numberOfPayments
-    const totalInterest = totalRepayment - loanAmount
+      (loanAmount *
+        (monthlyRate * Math.pow(1 + monthlyRate, numberOfPayments))) /
+        (Math.pow(1 + monthlyRate, numberOfPayments) - 1),
+    );
+    const totalRepayment = monthlyEMI * numberOfPayments;
+    const totalInterest = totalRepayment - loanAmount;
 
     return {
       monthlyEMI,
       totalInterest,
       totalRepayment,
-      disclaimer: 'Calculated estimate based on scheme parameters shown above. Official repayment terms may differ.',
-    }
+      disclaimer:
+        "Calculated estimate based on scheme parameters shown above. Official repayment terms may differ.",
+    };
   } catch (error) {
-    console.error('Finance calculation failed:', error)
-    throw error
+    console.error("Finance calculation failed:", error);
+    throw error;
   }
 }
 
@@ -212,7 +280,7 @@ export async function calculateFinance(
  */
 export async function findPartners(
   _location: string,
-  _schemeId: string
+  _schemeId: string,
 ): Promise<Partner[]> {
   try {
     // Placeholder for real API call
@@ -226,36 +294,36 @@ export async function findPartners(
     // Mock implementation
     return [
       {
-        id: '1',
-        name: 'District Industries Centre (DIC)',
-        distance: '4.2 km',
+        id: "1",
+        name: "District Industries Centre (DIC)",
+        distance: "4.2 km",
         authorized: true,
         compatible: true,
         verified: true,
-        address: '123 Main Street, Pune',
+        address: "123 Main Street, Pune",
       },
       {
-        id: '2',
-        name: 'SIDBI Branch',
-        distance: '6.1 km',
+        id: "2",
+        name: "SIDBI Branch",
+        distance: "6.1 km",
         authorized: true,
         compatible: true,
         verified: true,
-        address: '456 Business Park, Pune',
+        address: "456 Business Park, Pune",
       },
       {
-        id: '3',
-        name: 'Local Cooperative Bank',
-        distance: '2.3 km',
+        id: "3",
+        name: "Local Cooperative Bank",
+        distance: "2.3 km",
         authorized: false,
         compatible: false,
         verified: true,
-        address: '789 Town Center, Pune',
+        address: "789 Town Center, Pune",
       },
-    ]
+    ];
   } catch (error) {
-    console.error('Find partners failed:', error)
-    throw error
+    console.error("Find partners failed:", error);
+    throw error;
   }
 }
 
@@ -270,10 +338,10 @@ export async function healthCheck(): Promise<boolean> {
     // return response.ok
 
     // Mock implementation
-    return true
+    return true;
   } catch (error) {
-    console.error('Health check failed:', error)
-    return false
+    console.error("Health check failed:", error);
+    return false;
   }
 }
 
@@ -282,6 +350,7 @@ export default {
   checkEligibility,
   getSchemes,
   calculateFinance,
+  calculateEMI,
   findPartners,
   healthCheck,
-}
+};
