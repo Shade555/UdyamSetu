@@ -97,6 +97,35 @@ class AgentActionResponse(BaseModel):
     path: Optional[str] = None
 
 
+ACTION_RESPONSES = {
+    "en": {
+        "next": "Moving to the next step.",
+        "previous": "Returning to the previous step.",
+        "scheme": "Selected {value}. Opening its details.",
+        "scheme_missing": "Please say the scheme name: Daily Entrepreneurship Development Scheme, Stand Up India Scheme, or PMEGP Scheme.",
+        "fill": "I've filled {value}. You can say 'undo that' to restore the previous value.",
+    },
+    "hi": {
+        "next": "अगले चरण पर जा रहे हैं।",
+        "previous": "पिछले चरण पर लौट रहे हैं।",
+        "scheme": "{value} चुनी गई है। अब इसका विवरण खोल रहा हूँ।",
+        "scheme_missing": "कृपया योजना का नाम बोलें: डेली एंटरप्रेन्योरशिप डेवलपमेंट स्कीम, स्टैंड अप इंडिया या पीएमईजीपी।",
+        "fill": "मैंने {value} भर दिया है। पिछली जानकारी वापस लेने के लिए 'undo that' कहें।",
+    },
+    "mr": {
+        "next": "पुढच्या टप्प्यावर जात आहे.",
+        "previous": "मागील टप्प्यावर परत जात आहे.",
+        "scheme": "{value} निवडली आहे. आता तिचे तपशील उघडत आहे.",
+        "scheme_missing": "कृपया योजनेचे नाव सांगा: डेली एंटरप्रेन्योरशिप डेव्हलपमेंट स्कीम, स्टँड अप इंडिया किंवा पीएमईजीपी.",
+        "fill": "मी {value} भरले आहे. मागील माहिती परत आणण्यासाठी 'undo that' म्हणा.",
+    },
+}
+
+
+def action_text(language: str, key: str, value: str = "") -> str:
+    return ACTION_RESPONSES.get(language, ACTION_RESPONSES["en"])[key].format(value=value)
+
+
 # ============================================================================
 # MAIN CHAT ENDPOINT
 # ============================================================================
@@ -238,10 +267,10 @@ async def process_action(request: AgentActionRequest):
     previous_paths = {destination: source for source, destination in next_paths.items()}
     if any(phrase in message for phrase in ("next", "continue", "go ahead", "proceed")) and request.path in next_paths:
         destination = next_paths[request.path]
-        return AgentActionResponse(type="action", action="navigate", path=destination, response="Moving to the next step.")
+        return AgentActionResponse(type="action", action="navigate", path=destination, response=action_text(request.language, "next"))
     if any(phrase in message for phrase in ("go back", "previous", "back")) and request.path in previous_paths:
         destination = previous_paths[request.path]
-        return AgentActionResponse(type="action", action="navigate", path=destination, response="Returning to the previous step.")
+        return AgentActionResponse(type="action", action="navigate", path=destination, response=action_text(request.language, "previous"))
 
     schemes = {
         "daily entrepreneurship development scheme": "Daily Entrepreneurship Development Scheme",
@@ -255,9 +284,9 @@ async def process_action(request: AgentActionRequest):
         if selected:
             return AgentActionResponse(
                 type="action", action="select_scheme", field=selected, path="/home/scheme-details",
-                response=f"Selected {selected}. Opening its details.",
+                response=action_text(request.language, "scheme", selected),
             )
-        return AgentActionResponse(type="action", action="select_scheme", response="Please say the scheme name: Daily Entrepreneurship Development Scheme, Stand Up India Scheme, or PMEGP Scheme.")
+        return AgentActionResponse(type="action", action="select_scheme", response=action_text(request.language, "scheme_missing"))
 
     # Password fields must never be sent to, or targeted by, this endpoint.
     safe_fields = [field for field in request.fields if field.type.lower() != "password"]
@@ -268,7 +297,7 @@ async def process_action(request: AgentActionRequest):
     field_name = result["field"]
     return AgentActionResponse(
         type="action", action="fill_field", field=field_name, value=result["value"],
-        response=f"I've filled {field_name}. You can say 'undo that' to restore the previous value.",
+        response=action_text(request.language, "fill", field_name),
     )
 
 

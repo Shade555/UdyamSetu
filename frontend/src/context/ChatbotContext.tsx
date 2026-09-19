@@ -210,6 +210,7 @@ function speechText(text: string) {
 }
 
 async function playIndicAudio(text: string, language: string): Promise<boolean> {
+  let url = ''
   try {
     const response = await fetch('http://localhost:8000/api/tts', {
       method: 'POST',
@@ -217,17 +218,21 @@ async function playIndicAudio(text: string, language: string): Promise<boolean> 
       body: JSON.stringify({ text, language }),
     })
     if (!response.ok) return false
-    const url = URL.createObjectURL(await response.blob())
+    url = URL.createObjectURL(await response.blob())
     const audio = new Audio(url)
+    audio.preload = 'auto'
     await new Promise<void>((resolve, reject) => {
-      audio.onended = () => resolve()
-      audio.onerror = () => reject(new Error('Audio playback failed'))
-      void audio.play().catch(reject)
+      const timeout = window.setTimeout(() => reject(new Error('TTS playback timed out')), 180000)
+      audio.onended = () => { window.clearTimeout(timeout); resolve() }
+      audio.onerror = () => { window.clearTimeout(timeout); reject(new Error('Audio playback failed')) }
+      void audio.play().catch((error) => { window.clearTimeout(timeout); reject(error) })
     })
-    URL.revokeObjectURL(url)
     return true
-  } catch {
+  } catch (error) {
+    console.warn('Indic TTS playback failed; using browser speech fallback.', error)
     return false
+  } finally {
+    if (url) URL.revokeObjectURL(url)
   }
 }
 

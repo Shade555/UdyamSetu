@@ -37,10 +37,12 @@ def synthesize_speech(payload: TTSRequest) -> Response:
             audio = upstream.read()
             media_type = upstream.headers.get_content_type()
     except HTTPError as error:
-        raise HTTPException(status_code=502, detail=f"Indic TTS returned HTTP {error.code}") from error
+        # A sleeping/expired Colab runtime is an expected transient condition. The
+        # frontend will fall back to browser speech instead of treating it as a chat failure.
+        raise HTTPException(status_code=503, detail=f"Indic TTS temporarily unavailable (upstream HTTP {error.code})") from error
     except URLError as error:
         raise HTTPException(status_code=503, detail="Indic TTS is unavailable") from error
 
     if not audio or not media_type.startswith("audio/"):
-        raise HTTPException(status_code=502, detail="Indic TTS returned invalid audio")
+        raise HTTPException(status_code=503, detail="Indic TTS returned invalid audio")
     return Response(content=audio, media_type=media_type, headers={"Cache-Control": "private, max-age=86400"})

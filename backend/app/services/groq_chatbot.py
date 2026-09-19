@@ -48,6 +48,22 @@ class ChatResponse(BaseModel):
     success: bool
 
 
+def _parse_json_object(content: str) -> Dict[str, str]:
+    """Parse JSON even when a model wraps it in a markdown code fence or prose."""
+    candidate = content.strip().replace("```json", "").replace("```", "").strip()
+    match = re.search(r"\{.*\}", candidate, re.DOTALL)
+    if not match:
+        return {"intent": "chat", "details": "The model returned no structured intent"}
+    try:
+        parsed = json.loads(match.group(0))
+    except json.JSONDecodeError:
+        return {"intent": "chat", "details": "The model returned invalid structured intent"}
+    intent = parsed.get("intent")
+    if intent not in {"chat", "fill_field", "navigate", "question", "confirm"}:
+        intent = "chat"
+    return {"intent": intent, "details": str(parsed.get("details", ""))}
+
+
 async def get_groq_response(
     message: str,
     context: str,
@@ -191,11 +207,11 @@ Return ONLY valid JSON, no other text."""
         )
         
         # Parse JSON response
-        content = response.choices[0].message.content.strip()
-        return json.loads(content)
+        content = response.choices[0].message.content or ""
+        return _parse_json_object(content)
         
     except Exception as e:
-        print(f"Intent detection error: {e}")
+        # Intent detection is advisory. A malformed model response must not break chat.
         return {"intent": "chat", "details": "default"}
 
 

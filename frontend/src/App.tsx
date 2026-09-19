@@ -3,10 +3,12 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import { ChatbotProvider } from "./context/ChatbotContext";
+import { ThemeProvider } from "./context/ThemeContext";
 import { useChatbotContext } from "./hooks/useChatbotContext";
 import { hasCompletedOnboarding } from "./lib/supabase";
 import AppShell from "./components/AppShell";
 import ContextAwareChatbot from "./components/ContextAwareChatbot";
+import ThemeToggle from "./components/ThemeToggle";
 
 // Auth Pages
 import Login from "./pages/Login";
@@ -104,6 +106,7 @@ function AppContent() {
   return (
     <>
       <ContextAwareChatbot />
+      <ThemeToggle />
       <Routes>
       {/* Auth Routes */}
       <Route
@@ -264,9 +267,13 @@ function App() {
   }
 
   return (
-    <ChatbotProvider>
-      <AppContent />
-    </ChatbotProvider>
+    <ThemeProvider>
+      <ChatbotProvider>
+        <div className="app-theme min-h-screen">
+          <AppContent />
+        </div>
+      </ChatbotProvider>
+    </ThemeProvider>
   );
 }
 

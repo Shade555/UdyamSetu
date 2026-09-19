@@ -113,6 +113,54 @@
   color: var(--shell-text) !important;
 }
 
+/* Global theme surface. Existing pages use neutral Tailwind classes, so these
+   overrides keep the theme consistent without duplicating page-level state. */
+.app-theme {
+  min-height: 100vh;
+  background: #f1f1f1;
+  color: #171717;
+}
+
+.app-theme.dark {
+  background: #101010;
+  color: #f1f1f1;
+}
+
+.app-theme.dark .bg-neutral-50,
+.app-theme.dark .hover\:bg-neutral-50:hover { background-color: #101010 !important; }
+.app-theme.dark .bg-white,
+.app-theme.dark .card { background-color: #171717 !important; border-color: #303030 !important; color: #f1f1f1 !important; }
+.app-theme.dark .bg-neutral-100 { background-color: #222222 !important; }
+.app-theme.dark .bg-neutral-900 { background-color: #101010 !important; }
+.app-theme.dark .text-neutral-900,
+.app-theme.dark .text-neutral-700 { color: #f1f1f1 !important; }
+.app-theme.dark .text-neutral-600,
+.app-theme.dark .text-neutral-500,
+.app-theme.dark .text-neutral-400 { color: #a3a3a3 !important; }
+.app-theme.dark .text-neutral-50,
+.app-theme.dark .text-neutral-200,
+.app-theme.dark .text-neutral-300 { color: #f1f1f1 !important; }
+.app-theme.dark .border-neutral-200,
+.app-theme.dark .border-neutral-300,
+.app-theme.dark .border-neutral-700,
+.app-theme.dark .border-neutral-800 { border-color: #303030 !important; }
+.app-theme.dark input,
+.app-theme.dark textarea,
+.app-theme.dark select { background-color: #171717 !important; color: #f1f1f1 !important; border-color: #303030 !important; }
+
+.app-theme.light .bg-neutral-900 { background-color: #ffffff !important; }
+.app-theme.light .text-neutral-50,
+.app-theme.light .text-neutral-200,
+.app-theme.light .text-neutral-300 { color: #171717 !important; }
+.app-theme.light .border-neutral-700,
+.app-theme.light .border-neutral-800 { border-color: #e5e5e5 !important; }
+.app-theme.light .bg-neutral-800 { background-color: #f5f5f5 !important; }
+.app-theme.light input,
+.app-theme.light textarea,
+.app-theme.light select { background-color: #ffffff !important; color: #171717 !important; }
+.app-theme.dark .theme-toggle { background-color: #171717 !important; color: #f1f1f1 !important; border-color: #303030 !important; }
+.app-theme.light .theme-toggle { background-color: #ffffff !important; color: #171717 !important; }
+
 .app-shell.light {
   --shell-bg: #f1f1f1;
   --shell-panel: #ffffff;
