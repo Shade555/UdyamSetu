@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft, Calculator, AlertCircle } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { calculateEMI, type EMICalculationResponse } from "../services/api";
 import { formatCurrency } from "../lib/utils";
+import { getSchemeByCode } from "../lib/supabase";
 
 type SelectedScheme = { schemeId: string; schemeName: string };
 
@@ -11,6 +12,10 @@ export default function EMICalculator() {
   const navigate = useNavigate();
   const selectedScheme = location.state as SelectedScheme | null;
   const [loanAmount, setLoanAmount] = useState("");
+  const [maximumLoanAmount, setMaximumLoanAmount] = useState<number | null>(
+    null,
+  );
+  const [schemeLimitError, setSchemeLimitError] = useState("");
   const [repaymentPeriod, setRepaymentPeriod] = useState("");
   const [moratorium, setMoratorium] = useState("0");
   const [projectCost, setProjectCost] = useState("");
@@ -22,6 +27,41 @@ export default function EMICalculator() {
   const [result, setResult] = useState<EMICalculationResponse | null>(null);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!selectedScheme?.schemeId) return;
+
+    let cancelled = false;
+    setMaximumLoanAmount(null);
+    setSchemeLimitError("");
+
+    getSchemeByCode(selectedScheme.schemeId)
+      .then((scheme) => {
+        if (cancelled) return;
+        const limit = Number(scheme?.max_amount);
+        if (!scheme || !Number.isFinite(limit) || limit <= 0) {
+          setSchemeLimitError(
+            "The selected scheme maximum loan amount is unavailable.",
+          );
+          return;
+        }
+        setMaximumLoanAmount(limit);
+        setLoanAmount((current) => {
+          const currentAmount = Number(current);
+          return current && currentAmount <= limit ? current : "0";
+        });
+      })
+      .catch(() => {
+        if (!cancelled)
+          setSchemeLimitError(
+            "We could not load the selected scheme loan limit.",
+          );
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedScheme?.schemeId]);
 
   if (!selectedScheme) {
     return (
@@ -81,6 +121,17 @@ export default function EMICalculator() {
 
   const isUny = selectedScheme.schemeId === "UNY";
   const isEls = selectedScheme.schemeId === "ELS";
+  const updateLoanAmount = (value: string) => {
+    if (value === "") {
+      setLoanAmount("");
+      return;
+    }
+    const amount = Number(value);
+    if (!Number.isFinite(amount)) return;
+    setLoanAmount(
+      String(Math.min(Math.max(0, amount), maximumLoanAmount ?? amount)),
+    );
+  };
 
   return (
     <section className="space-y-8">
@@ -102,10 +153,11 @@ export default function EMICalculator() {
       </div>
 
       <form onSubmit={submit} className="card grid gap-5 md:grid-cols-2">
-        <Field
-          label="Loan amount"
+        <LoanAmountField
           value={loanAmount}
-          onChange={setLoanAmount}
+          maximum={maximumLoanAmount}
+          error={schemeLimitError}
+          onChange={updateLoanAmount}
         />
         <Field
           label="Repayment period (months)"
@@ -174,7 +226,7 @@ export default function EMICalculator() {
         <button
           type="submit"
           disabled={submitting}
-          className="btn-primary md:col-span-2 flex items-center justify-center gap-2 disabled:opacity-50"
+          className="btn-primary md:col-span-2 flex items-center justify-center gap-2 border border-neutral-700 bg-neutral-800 text-neutral-100 hover:bg-neutral-700 disabled:opacity-50"
         >
           <Calculator size={18} />{" "}
           {submitting ? "Calculating..." : "Calculate EMI"}
@@ -212,9 +264,69 @@ function Field({
         type="number"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="input-base"
+        className="input-base border-neutral-700 bg-neutral-900 text-neutral-100 placeholder:text-neutral-500 focus:border-neutral-500 focus:ring-neutral-700"
       />
     </label>
+  );
+}
+
+function LoanAmountField({
+  value,
+  maximum,
+  error,
+  onChange,
+}: {
+  value: string;
+  maximum: number | null;
+  error: string;
+  onChange: (value: string) => void;
+}) {
+  const numericValue = Number(value || 0);
+  const sliderStep = maximum ? Math.max(1, Math.round(maximum / 1000)) : 1;
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <label htmlFor="loan-amount-slider" className="text-sm font-medium">
+          Loan amount
+        </label>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-neutral-500">₹</span>
+          <input
+            aria-label="Loan amount value"
+            type="number"
+            min="0"
+            max={maximum ?? undefined}
+            step="1"
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+            disabled={maximum === null}
+            className="w-32 rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-right text-sm text-neutral-100 outline-none focus:border-neutral-500 focus:ring-2 focus:ring-neutral-700 disabled:opacity-50"
+          />
+        </div>
+      </div>
+      <input
+        id="loan-amount-slider"
+        aria-label="Loan amount slider"
+        type="range"
+        min="0"
+        max={maximum ?? 0}
+        step={sliderStep}
+        value={Math.min(numericValue, maximum ?? 0)}
+        onChange={(event) => onChange(event.target.value)}
+        disabled={maximum === null}
+        className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-neutral-800 accent-neutral-200 disabled:cursor-not-allowed disabled:opacity-50"
+      />
+      <div className="flex justify-between text-xs text-neutral-500">
+        <span>₹0</span>
+        <span>
+          {maximum === null
+            ? "Loading maximum..."
+            : `Maximum: ${formatCurrency(maximum)}`}
+        </span>
+      </div>
+      {error && <p className="text-xs text-red-300">{error}</p>}
+    </div>
   );
 }
 
@@ -238,7 +350,7 @@ function Select({
         required
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="input-base"
+        className="input-base border-neutral-700 bg-neutral-900 text-neutral-100 focus:border-neutral-500 focus:ring-neutral-700"
       >
         <option value="">Select...</option>
         {options.map((option, index) => (
@@ -317,37 +429,277 @@ function Summary({ label, value }: { label: string; value: string }) {
 }
 
 function BalanceGraph({ result }: { result: EMICalculationResponse }) {
-  const max = Math.max(
-    ...result.schedule.map((row) => row.remaining_balance),
+  const [hoveredPeriod, setHoveredPeriod] = useState<number | null>(null);
+  const width = 900;
+  const height = 430;
+  const margin = { top: 42, right: 78, bottom: 72, left: 82 };
+  const plotWidth = width - margin.left - margin.right;
+  const plotHeight = height - margin.top - margin.bottom;
+  const periodsPerYear =
+    result.repayment_frequency === "monthly"
+      ? 12
+      : result.repayment_frequency === "half-yearly"
+        ? 2
+        : 4;
+  const monthsPerPeriod = 12 / periodsPerYear;
+  const paymentMonths = result.schedule.map(
+    (row) => result.moratorium_months + row.period * monthsPerPeriod,
+  );
+  const totalMonths = Math.max(
+    result.repayment_period_months,
+    paymentMonths[paymentMonths.length - 1] || 0,
+  );
+  const paymentMax = Math.max(
+    ...result.schedule.map((row) => row.payment),
     1,
   );
-  const points = result.schedule
-    .map(
-      (row, index) =>
-        `${10 + (index / Math.max(result.schedule.length - 1, 1)) * 700},${190 - (row.remaining_balance / max) * 160}`,
-    )
-    .join(" ");
+  const balanceMax = Math.max(result.loan_amount, 1);
+  const x = (month: number) =>
+    margin.left + (month / totalMonths) * plotWidth;
+  const paymentY = (amount: number) =>
+    margin.top + plotHeight - (amount / paymentMax) * plotHeight;
+  const balanceY = (amount: number) =>
+    margin.top + plotHeight - (amount / balanceMax) * plotHeight;
+  const barWidth = Math.max(
+    8,
+    Math.min(24, (monthsPerPeriod / totalMonths) * plotWidth * 0.6),
+  );
+  const moratoriumWidth =
+    Math.min(result.moratorium_months / totalMonths, 1) * plotWidth;
+  const hovered =
+    hoveredPeriod === null ? null : result.schedule[hoveredPeriod];
+  const gridTicks = [0, 0.25, 0.5, 0.75, 1];
+  const xLabels = Array.from(
+    new Set([
+      0,
+      result.moratorium_months,
+      ...paymentMonths.filter((month) => month <= totalMonths),
+      totalMonths,
+    ]),
+  );
+
   return (
     <svg
-      viewBox="0 0 720 220"
-      className="min-w-[620px] w-full"
+      viewBox={`0 0 ${width} ${height}`}
+      className="min-w-[720px] w-full text-neutral-500"
       role="img"
-      aria-label="Remaining loan balance over time"
+      aria-label="Principal and interest payments with remaining balance over time"
     >
+      {gridTicks.map((tick) => {
+        const yPosition = margin.top + plotHeight - tick * plotHeight;
+        return (
+          <g key={tick}>
+            <line
+              x1={margin.left}
+              y1={yPosition}
+              x2={width - margin.right}
+              y2={yPosition}
+              stroke="#303030"
+            />
+            <text
+              x={margin.left - 12}
+              y={yPosition + 4}
+              textAnchor="end"
+              fontSize="11"
+              fill="#999"
+            >
+              {formatCurrency(paymentMax * tick)}
+            </text>
+            <text
+              x={width - margin.right + 12}
+              y={yPosition + 4}
+              textAnchor="start"
+              fontSize="11"
+              fill="#999"
+            >
+              {formatCurrency(balanceMax * tick)}
+            </text>
+          </g>
+        );
+      })}
+
+      {result.moratorium_months > 0 && (
+        <g>
+          <rect
+            x={margin.left}
+            y={margin.top}
+            width={moratoriumWidth}
+            height={plotHeight}
+            fill="#9a7b38"
+            opacity=".14"
+          />
+          <text
+            x={margin.left + 8}
+            y={margin.top + 16}
+            fontSize="11"
+            fill="#c9a85d"
+          >
+            Moratorium ({result.moratorium_months} months)
+          </text>
+        </g>
+      )}
+
+      {result.schedule.map((row, index) => {
+        const barX = x(paymentMonths[index]) - barWidth / 2;
+        const principalY = paymentY(row.principal);
+        const totalPaymentY = paymentY(row.payment);
+        const principalHeight = margin.top + plotHeight - principalY;
+        const interestHeight = principalY - totalPaymentY;
+        return (
+          <g
+            key={row.period}
+            onMouseEnter={() => setHoveredPeriod(index)}
+            onMouseLeave={() => setHoveredPeriod(null)}
+          >
+            <rect
+              x={barX}
+              y={principalY}
+              width={barWidth}
+              height={principalHeight}
+              fill="#d4d4d4"
+              opacity=".9"
+            />
+            <rect
+              x={barX}
+              y={totalPaymentY}
+              width={barWidth}
+              height={interestHeight}
+              fill="#737373"
+              opacity=".95"
+            />
+            <rect
+              x={barX}
+              y={margin.top}
+              width={barWidth}
+              height={plotHeight}
+              fill="transparent"
+              className="cursor-crosshair"
+            />
+          </g>
+        );
+      })}
+
       <polyline
         fill="none"
-        stroke="currentColor"
-        strokeWidth="3"
-        points={points}
+        stroke="#f4f4f5"
+        strokeWidth="2.5"
+        points={result.schedule
+          .map(
+            (row, index) =>
+              `${x(paymentMonths[index])},${balanceY(row.remaining_balance)}`,
+          )
+          .join(" ")}
       />
+      {result.schedule.map((row, index) => (
+        <circle
+          key={`balance-${row.period}`}
+          cx={x(paymentMonths[index])}
+          cy={balanceY(row.remaining_balance)}
+          r="3"
+          fill="#f4f4f5"
+        />
+      ))}
+
       <line
-        x1="10"
-        y1="190"
-        x2="710"
-        y2="190"
-        stroke="currentColor"
-        opacity=".2"
+        x1={margin.left}
+        y1={margin.top + plotHeight}
+        x2={width - margin.right}
+        y2={margin.top + plotHeight}
+        stroke="#555"
       />
+      {xLabels.map((month) => (
+        <text
+          key={`month-${month}`}
+          x={x(month)}
+          y={height - 42}
+          textAnchor="middle"
+          fontSize="11"
+          fill="#999"
+        >
+          {Math.round(month)}
+        </text>
+      ))}
+      <text
+        x={margin.left + plotWidth / 2}
+        y={height - 12}
+        textAnchor="middle"
+        fontSize="12"
+        fill="#aaa"
+      >
+        Months
+      </text>
+      <text
+        x="16"
+        y={margin.top + plotHeight / 2}
+        textAnchor="middle"
+        fontSize="12"
+        fill="#aaa"
+        transform={`rotate(-90 16 ${margin.top + plotHeight / 2})`}
+      >
+        Payment / Principal / Interest (₹)
+      </text>
+      <text
+        x={width - 16}
+        y={margin.top + plotHeight / 2}
+        textAnchor="middle"
+        fontSize="12"
+        fill="#aaa"
+        transform={`rotate(90 ${width - 16} ${margin.top + plotHeight / 2})`}
+      >
+        Remaining Balance (₹)
+      </text>
+
+      <g transform={`translate(${margin.left}, 12)`}>
+        <rect width="12" height="12" fill="#d4d4d4" />
+        <text x="18" y="11" fontSize="11" fill="#bbb">
+          Principal Paid
+        </text>
+        <rect x="126" width="12" height="12" fill="#737373" />
+        <text x="144" y="11" fontSize="11" fill="#bbb">
+          Interest Paid
+        </text>
+        <line
+          x1="270"
+          y1="6"
+          x2="286"
+          y2="6"
+          stroke="#f4f4f5"
+          strokeWidth="2.5"
+        />
+        <text x="294" y="11" fontSize="11" fill="#bbb">
+          Remaining Balance
+        </text>
+      </g>
+
+      {hovered && hoveredPeriod !== null && (
+        <g
+          pointerEvents="none"
+          transform={`translate(${Math.min(x(paymentMonths[hoveredPeriod]) + 12, width - 190)}, ${Math.max(balanceY(hovered.remaining_balance) - 92, margin.top + 8)})`}
+        >
+          <rect
+            width="178"
+            height="82"
+            rx="5"
+            fill="#202020"
+            stroke="#4a4a4a"
+          />
+          <text x="10" y="17" fontSize="11" fill="#f4f4f5">
+            Month {Math.round(hovered.period * monthsPerPeriod)}
+          </text>
+          <text x="10" y="33" fontSize="10" fill="#bdbdbd">
+            Principal: {formatCurrency(hovered.principal)}
+          </text>
+          <text x="10" y="48" fontSize="10" fill="#bdbdbd">
+            Interest: {formatCurrency(hovered.interest)}
+          </text>
+          <text x="10" y="63" fontSize="10" fill="#bdbdbd">
+            Payment: {formatCurrency(hovered.payment)}
+          </text>
+          <text x="10" y="78" fontSize="10" fill="#bdbdbd">
+            Balance: {formatCurrency(hovered.remaining_balance)}
+          </text>
+        </g>
+      )}
     </svg>
   );
 }

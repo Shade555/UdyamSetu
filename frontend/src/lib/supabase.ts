@@ -123,6 +123,23 @@ export async function getActiveSchemes() {
   return data || [];
 }
 
+export async function getSchemeByCode(code: string) {
+  const { data, error } = await supabase
+    .from("schemes")
+    .select("code, max_amount")
+    .eq("code", code)
+    .eq("status", "active")
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Error fetching scheme limit:", error);
+    throw error;
+  }
+
+  return data;
+}
+
 /**
  * Get active partners
  */
