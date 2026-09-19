@@ -90,6 +90,8 @@ export default function Signup() {
             <div className="relative">
               <User size={18} className="absolute left-3 top-3.5 text-neutral-500" />
               <input
+                id="full-name"
+                name="full_name"
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
@@ -106,6 +108,8 @@ export default function Signup() {
             <div className="relative">
               <Mail size={18} className="absolute left-3 top-3.5 text-neutral-500" />
               <input
+                id="email"
+                name="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -122,6 +126,8 @@ export default function Signup() {
             <div className="relative">
               <Lock size={18} className="absolute left-3 top-3.5 text-neutral-500" />
               <input
+                id="password"
+                name="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -140,6 +146,8 @@ export default function Signup() {
             <div className="relative">
               <Lock size={18} className="absolute left-3 top-3.5 text-neutral-500" />
               <input
+                id="confirm-password"
+                name="confirm_password"
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}

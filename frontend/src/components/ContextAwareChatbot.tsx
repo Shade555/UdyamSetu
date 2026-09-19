@@ -66,7 +66,7 @@ export default function ContextAwareChatbot() {
     try {
       const transcript = await startSpeechRecognition(language)
       if (transcript) {
-        setInput(transcript)
+        await sendMessage(transcript)
       }
     } catch (error) {
       console.error('Voice input error:', error)
@@ -127,7 +127,7 @@ export default function ContextAwareChatbot() {
                   <MessageCircle size={32} className="mx-auto mb-2 opacity-30" />
                   <p>Hello! I'm here to guide you through every step.</p>
                   <p className="text-xs mt-2 opacity-70">
-                    Ask me anything about schemes, eligibility, or documents.
+                    Ask about schemes, or say “my email is…” to fill a visible form field.
                   </p>
                 </motion.div>
               ) : (

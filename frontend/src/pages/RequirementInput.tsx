@@ -77,7 +77,9 @@ export default function RequirementInput({
 
         {/* Input */}
         <motion.div className="space-y-4" variants={containerVariants}>
-          <motion.textarea
+            <motion.textarea
+              id="requirement"
+              name="requirement"
             variants={itemVariants}
             value={input}
             onChange={(e) => setInput(e.target.value)}

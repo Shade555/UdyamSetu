@@ -90,6 +90,8 @@ export default function Login() {
                 className="absolute left-3 top-3.5 text-neutral-500"
               />
               <input
+                id="email"
+                name="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -111,6 +113,8 @@ export default function Login() {
                 className="absolute left-3 top-3.5 text-neutral-500"
               />
               <input
+                id="password"
+                name="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

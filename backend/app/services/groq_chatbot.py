@@ -5,6 +5,7 @@ Handles intelligent responses with context awareness for UdyamSetu
 
 import os
 import json
+import re
 from typing import List, Dict, Optional
 from groq import Groq
 from pydantic import BaseModel
@@ -166,6 +167,14 @@ async def detect_intent(
         Dictionary with intent type and details
     """
     
+    normalized = message.strip().lower()
+    named_value = re.search(r"\b(?:email|e-mail|name|full name|loan amount|amount|income|tenure|requirement)\b\s+(?:is|to|as)\s+\S+", normalized)
+    amount_request = re.search(r"\b(?:i\s+)?need\b.*\d|\b(?:loan|amount)\b.*\d", normalized)
+    if re.search(r"\b(my|the|set|fill|update|change)\b.+\b(is|to|as)\b", normalized) or named_value or amount_request or "@" in normalized:
+        return {"intent": "fill_field", "details": "Message appears to provide a form value"}
+    if not client:
+        return {"intent": "chat", "details": "No AI client configured"}
+
     intent_prompt = f"""Analyze this message in {language} and return JSON with:
 {{"intent": "chat|fill_field|navigate|question|confirm", "details": "brief explanation"}}
 
@@ -208,6 +217,33 @@ async def extract_field_info(
     """
     
     fields_str = ", ".join(available_fields)
+    normalized_fields = {re.sub(r"[^a-z0-9]", "", field.lower()): field for field in available_fields}
+
+    email = re.search(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+", message)
+    if email:
+        field = next((original for key, original in normalized_fields.items() if "email" in key or "mail" in key), None)
+        if field:
+            return {"field": field, "value": email.group(0)}
+    match = re.search(r"(?:my|the|set|fill|update|change)\s+(.+?)\s+(?:is|to|as)\s+(.+?)[.!?]*$", message, re.IGNORECASE)
+    if match:
+        requested, value = match.group(1).strip().lower(), match.group(2).strip()
+        requested_key = re.sub(r"[^a-z0-9]", "", requested)
+        field = next((original for key, original in normalized_fields.items() if requested_key in key or key in requested_key), None)
+        if field and value:
+            return {"field": field, "value": value}
+    amount_match = re.search(r"(?:₹|rs\.?|inr)?\s*([\d,]+(?:\.\d+)?)\s*(lakh|lakhs|lac|lacs|crore|crores)?", message, re.IGNORECASE)
+    if amount_match and re.search(r"\b(need|loan|amount|income)\b", message, re.IGNORECASE):
+        amount_field = next((original for key, original in normalized_fields.items() if "amount" in key or "income" in key), None)
+        if amount_field:
+            amount = float(amount_match.group(1).replace(",", ""))
+            unit = (amount_match.group(2) or "").lower()
+            if unit in {"lakh", "lakhs", "lac", "lacs"}:
+                amount *= 100000
+            elif unit in {"crore", "crores"}:
+                amount *= 10000000
+            return {"field": amount_field, "value": str(int(amount) if amount.is_integer() else amount)}
+    if not client:
+        return {"field": None, "value": None}
     
     extraction_prompt = f"""Extract form field information from this {language} message:
 "{message}"
@@ -231,6 +267,19 @@ Return ONLY valid JSON, nothing else."""
     except Exception as e:
         print(f"Field extraction error: {e}")
         return {"field": None, "value": None}
+
+
+async def process_agentic_request(message: str, available_fields: List[str], language: str = "en") -> Dict[str, Optional[str]]:
+    """Classify a safe browser action. The browser validates and performs every fill."""
+    if not available_fields:
+        return {"type": "chat", "action": None, "field": None, "value": None}
+    intent = await detect_intent(message, language)
+    if intent.get("intent") != "fill_field":
+        return {"type": "chat", "action": None, "field": None, "value": None}
+    extracted = await extract_field_info(message, available_fields, language)
+    if extracted.get("field") and extracted.get("value"):
+        return {"type": "action", "action": "fill_field", "field": extracted["field"], "value": extracted["value"]}
+    return {"type": "chat", "action": None, "field": None, "value": None}
 
 
 async def get_guidance_for_page(

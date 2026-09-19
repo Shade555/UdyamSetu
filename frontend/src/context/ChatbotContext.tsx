@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useCallback } from 'react'
+import React, { createContext, useContext, useState, useCallback, useRef } from 'react'
+import { detectFormFields, fillFormField as setFormField, type FormField } from '../services/formFieldDetector'
 
 export interface Message {
   id: string
@@ -20,6 +21,9 @@ export interface ChatbotContextType {
   setLanguage: (lang: 'en' | 'hi' | 'mr') => void
   setCurrentScreenContext: (context: string) => void
   toggleVoiceMode: () => Promise<void>
+  fillFormField: (fieldName: string, value: string) => Promise<boolean>
+  listFormFields: () => string[]
+  undoLastFieldFill: () => Promise<boolean>
 }
 
 const ChatbotContext = createContext<ChatbotContextType | undefined>(undefined)
@@ -31,6 +35,43 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [language, setLanguage] = useState<'en' | 'hi' | 'mr'>('en')
   const [currentScreenContext, setCurrentScreenContext] = useState('')
+  const lastFill = useRef<{ field: FormField; previousValue: string } | null>(null)
+
+  const addAssistantMessage = useCallback((content: string) => {
+    setMessages((prev) => [...prev, { id: `assistant-${Date.now()}`, role: 'assistant', content, timestamp: Date.now() }])
+  }, [])
+
+  const listFormFields = useCallback(() => detectFormFields().map((field) => field.label || field.name), [])
+
+  const fillFormField = useCallback(async (fieldName: string, value: string) => {
+    const fields = detectFormFields()
+    const query = fieldName.trim().toLowerCase()
+    const field = fields.find((candidate) => [candidate.name, candidate.label, candidate.id]
+      .some((name) => name.toLowerCase() === query || name.toLowerCase().includes(query) || query.includes(name.toLowerCase())))
+    if (!field) {
+      addAssistantMessage(`I couldn't find “${fieldName}”. Available fields: ${fields.map((item) => item.label || item.name).join(', ') || 'none on this page'}.`)
+      return false
+    }
+    const previousValue = field.value
+    if (!setFormField(field, value)) {
+      addAssistantMessage(`I couldn't use that value for ${field.label || field.name}. Please check the format and try again.`)
+      return false
+    }
+    lastFill.current = { field, previousValue }
+    addAssistantMessage(`✓ I've filled ${field.label || field.name} with “${value}”. Say “undo that” to restore it.`)
+    return true
+  }, [addAssistantMessage])
+
+  const undoLastFieldFill = useCallback(async () => {
+    const change = lastFill.current
+    if (!change || !setFormField(change.field, change.previousValue)) {
+      addAssistantMessage('There is no recent field change I can undo.')
+      return false
+    }
+    addAssistantMessage(`✓ Restored ${change.field.label || change.field.name}.`)
+    lastFill.current = null
+    return true
+  }, [addAssistantMessage])
 
   const sendMessage = useCallback(
     async (content: string) => {
@@ -47,6 +88,23 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true)
 
       try {
+        if (/^(undo|undo that|change that)$/i.test(content.trim())) {
+          await undoLastFieldFill()
+          return
+        }
+        const fields = detectFormFields()
+        const actionResponse = await fetch('http://localhost:8000/api/chatbot/action', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: content, context: currentScreenContext, language, fields }),
+        })
+        if (actionResponse.ok) {
+          const action = await actionResponse.json()
+          if (action.type === 'action' && action.action === 'fill_field') {
+            const success = await fillFormField(action.field, action.value)
+            if (success && isSpeaking) await speakText(action.response, language)
+            return
+          }
+        }
         const response = await fetch('http://localhost:8000/api/chatbot', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -62,10 +120,7 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
 
         const data = await response.json()
         const assistantMessage: Message = {
-          id: `assistant-${Date.now()}`,
-          role: 'assistant',
-          content: data.response,
-          timestamp: Date.now(),
+          id: `assistant-${Date.now()}`, role: 'assistant', content: data.response, timestamp: Date.now(),
         }
 
         setMessages((prev) => [...prev, assistantMessage])
@@ -87,7 +142,7 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false)
       }
     },
-    [currentScreenContext, language, messages, isSpeaking]
+    [currentScreenContext, language, messages, isSpeaking, fillFormField, undoLastFieldFill]
   )
 
   const clearMessages = useCallback(() => {
@@ -113,6 +168,9 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
         setLanguage,
         setCurrentScreenContext,
         toggleVoiceMode,
+        fillFormField,
+        listFormFields,
+        undoLastFieldFill,
       }}
     >
       {children}

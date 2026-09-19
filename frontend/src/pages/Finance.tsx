@@ -58,6 +58,8 @@ export default function Finance(_props: FinanceProps) {
               <span className="text-accent-600 font-bold">₹{loanAmount.toLocaleString('en-IN')}</span>
             </div>
             <input
+              id="loan-amount"
+              name="loan_amount"
               type="range"
               min="50000"
               max="2000000"
@@ -74,6 +76,8 @@ export default function Finance(_props: FinanceProps) {
               <span className="text-accent-600 font-bold">{tenure} years</span>
             </div>
             <input
+              id="loan-tenure"
+              name="loan_tenure"
               type="range"
               min="1"
               max="15"

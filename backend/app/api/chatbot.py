@@ -13,6 +13,7 @@ from ..services.groq_chatbot import (
     get_groq_response,
     detect_intent,
     extract_field_info,
+    process_agentic_request,
     ChatRequest,
     ChatResponse,
 )
@@ -68,6 +69,30 @@ class FieldExtractionResponse(BaseModel):
     """Response for field extraction"""
     field: Optional[str]
     value: Optional[str]
+
+
+class AgentField(BaseModel):
+    """A non-sensitive, visible client-side form field description."""
+    id: str
+    name: str
+    label: str = ""
+    type: str
+    required: bool = False
+
+
+class AgentActionRequest(BaseModel):
+    message: str
+    context: str = ""
+    language: str = "en"
+    fields: List[AgentField] = []
+
+
+class AgentActionResponse(BaseModel):
+    type: str
+    action: Optional[str] = None
+    field: Optional[str] = None
+    value: Optional[str] = None
+    response: Optional[str] = None
 
 
 # ============================================================================
@@ -190,6 +215,27 @@ async def health_check():
 # ============================================================================
 # INTENT DETECTION ENDPOINT (For Agentic Features)
 # ============================================================================
+
+@router.post("/action", response_model=AgentActionResponse)
+async def process_action(request: AgentActionRequest):
+    """Return a proposed form-fill action; execution and validation stay in the browser."""
+    if not request.message.strip():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Message cannot be empty")
+    if request.language not in ["en", "hi", "mr"]:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported language")
+
+    # Password fields must never be sent to, or targeted by, this endpoint.
+    safe_fields = [field for field in request.fields if field.type.lower() != "password"]
+    available = [field.label or field.name or field.id for field in safe_fields]
+    result = await process_agentic_request(request.message, available, request.language)
+    if result["type"] != "action":
+        return AgentActionResponse(type="chat")
+    field_name = result["field"]
+    return AgentActionResponse(
+        type="action", action="fill_field", field=field_name, value=result["value"],
+        response=f"I've filled {field_name}. You can say 'undo that' to restore the previous value.",
+    )
+
 
 @router.post("/intent", response_model=IntentResponse)
 async def detect_user_intent(request: IntentRequest):
