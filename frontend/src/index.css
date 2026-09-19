@@ -100,20 +100,8 @@
   }
 }
 
-/* Dark workspace theme for the authenticated dashboard shell. */
-.app-shell {
-  --shell-bg: #101010;
-  --shell-panel: #171717;
-  --shell-panel-hover: #222222;
-  --shell-border: #303030;
-  --shell-text: #f1f1f1;
-  --shell-muted: #999999;
-  --shell-accent: #e5e5e5;
-  background: var(--shell-bg) !important;
-  color: var(--shell-text) !important;
-}
-
-.app-shell.light {
+/* Universal theme variables based on the dashboard black/white theme */
+:root, [data-theme="light"] {
   --shell-bg: #f1f1f1;
   --shell-panel: #ffffff;
   --shell-panel-hover: #e8e8e8;
@@ -123,81 +111,133 @@
   --shell-accent: #202020;
 }
 
-.app-shell .bg-white,
-.app-shell .card {
+[data-theme="dark"] {
+  --shell-bg: #101010;
+  --shell-panel: #171717;
+  --shell-panel-hover: #222222;
+  --shell-border: #303030;
+  --shell-text: #f1f1f1;
+  --shell-muted: #999999;
+  --shell-accent: #e5e5e5;
+}
+
+body {
+  background-color: var(--shell-bg) !important;
+  color: var(--shell-text) !important;
+}
+
+/* Apply universal mappings for common Tailwind utilities used in the app */
+body .bg-white,
+body .card {
   background-color: var(--shell-panel) !important;
   border-color: var(--shell-border) !important;
   color: var(--shell-text) !important;
   box-shadow: none !important;
 }
 
-.app-shell .bg-neutral-50,
-.app-shell .hover\:bg-neutral-50:hover {
+body .bg-neutral-50,
+body .hover\:bg-neutral-50:hover,
+body .bg-neutral-100 {
   background-color: var(--shell-bg) !important;
 }
 
-.app-shell .text-neutral-900,
-.app-shell .text-neutral-700 {
+body .text-neutral-900,
+body .text-neutral-700,
+body .text-neutral-800 {
   color: var(--shell-text) !important;
 }
 
-.app-shell .text-neutral-600,
-.app-shell .text-neutral-500 {
+body .text-neutral-600,
+body .text-neutral-500,
+body .text-neutral-400 {
   color: var(--shell-muted) !important;
 }
 
-.app-shell .border-neutral-200,
-.app-shell .border-neutral-300 {
+body .border-neutral-200,
+body .border-neutral-300,
+body .border-neutral-700,
+body .border-neutral-800 {
   border-color: var(--shell-border) !important;
 }
 
-.app-shell .text-accent-700,
-.app-shell .text-accent-600,
-.app-shell .group-hover\:text-accent-700:hover {
+body .text-accent-700,
+body .text-accent-600,
+body .group-hover\:text-accent-700:hover {
   color: var(--shell-accent) !important;
 }
 
-.app-shell .bg-accent-50 {
+body .bg-accent-50 {
   background-color: var(--shell-panel-hover) !important;
 }
 
-.app-shell .bg-accent-600,
-.app-shell .border-accent-600 {
+body .bg-accent-600,
+body .border-accent-600 {
   background-color: var(--shell-accent) !important;
   border-color: var(--shell-accent) !important;
 }
 
-.app-shell .border-accent-400:hover,
-.app-shell .hover\:border-accent-400:hover {
+body .border-accent-400:hover,
+body .hover\:border-accent-400:hover {
   border-color: var(--shell-accent) !important;
 }
 
-.app-shell .btn-primary {
+body .btn-primary {
   background-color: var(--shell-accent) !important;
   color: var(--shell-bg) !important;
 }
 
-.app-shell .btn-primary:hover {
-  background-color: #ffffff !important;
+body .btn-primary:hover {
+  background-color: var(--shell-text) !important;
+  color: var(--shell-bg) !important;
 }
 
-.app-shell .btn-secondary {
+body .btn-secondary {
   border-color: var(--shell-border) !important;
   color: var(--shell-text) !important;
   background-color: transparent !important;
 }
 
-.app-shell .btn-secondary:hover {
-  border-color: #51515a !important;
+body .btn-secondary:hover {
+  border-color: var(--shell-muted) !important;
   background-color: var(--shell-panel-hover) !important;
 }
 
-.app-shell .hover\:bg-neutral-100:hover {
+body .hover\:bg-neutral-100:hover {
   background-color: var(--shell-panel-hover) !important;
 }
 
-.app-shell .fixed.bg-white {
+body .fixed.bg-white {
   background-color: var(--shell-panel) !important;
+}
+
+body input,
+body textarea,
+body select {
+  background-color: var(--shell-panel) !important;
+  color: var(--shell-text) !important;
+  border-color: var(--shell-border) !important;
+}
+
+/* Theme toggle button specific styling */
+body .theme-toggle {
+  background-color: var(--shell-panel) !important;
+  color: var(--shell-text) !important;
+  border-color: var(--shell-border) !important;
+}
+body .theme-toggle:hover {
+  background-color: var(--shell-panel-hover) !important;
+}
+
+/* ContextAwareChatbot overrides */
+body .bg-neutral-900,
+body .bg-neutral-800,
+body .bg-neutral-700 {
+  background-color: var(--shell-panel) !important;
+}
+body .text-neutral-50,
+body .text-neutral-200,
+body .text-neutral-300 {
+  color: var(--shell-text) !important;
 }
 
 /* Accessibility */
@@ -208,3 +248,8 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+body .text-white {
+  color: var(--shell-bg) !important;
+}
+

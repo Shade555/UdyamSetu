@@ -1,11 +1,14 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import { ChatbotProvider } from "./context/ChatbotContext";
+import { ThemeProvider } from "./context/ThemeContext";
 import { useChatbotContext } from "./hooks/useChatbotContext";
 import { hasCompletedOnboarding } from "./lib/supabase";
 import AppShell from "./components/AppShell";
 import ContextAwareChatbot from "./components/ContextAwareChatbot";
+import ThemeToggle from "./components/ThemeToggle";
 
 // Auth Pages
 import Login from "./pages/Login";
@@ -89,11 +92,22 @@ function HomeRoute({ activeStep }: { activeStep?: number }) {
 
 function AppContent() {
   const { session } = useAuth();
+  const navigate = useNavigate();
   useChatbotContext();
+
+  useEffect(() => {
+    const handleAgentAction = (event: Event) => {
+      const action = (event as CustomEvent<{ path?: string }>).detail;
+      if (action?.path) navigate(action.path);
+    };
+    window.addEventListener('udyamsetu:agent-action', handleAgentAction);
+    return () => window.removeEventListener('udyamsetu:agent-action', handleAgentAction);
+  }, [navigate]);
 
   return (
     <>
       <ContextAwareChatbot />
+      <ThemeToggle />
       <Routes>
         {/* Auth Routes */}
         <Route
@@ -256,9 +270,13 @@ function App() {
   }
 
   return (
-    <ChatbotProvider>
-      <AppContent />
-    </ChatbotProvider>
+    <ThemeProvider>
+      <ChatbotProvider>
+        <div className="app-theme min-h-screen">
+          <AppContent />
+        </div>
+      </ChatbotProvider>
+    </ThemeProvider>
   );
 }
 

@@ -88,6 +88,10 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true)
 
       try {
+        if (/\b(password|passcode|pin)\b/i.test(content) && /\b(is|to|as|set|fill|enter)\b/i.test(content)) {
+          addAssistantMessage('For your security, I can’t receive, repeat, or fill passwords. Please enter it directly in the password field.')
+          return
+        }
         if (/^(undo|undo that|change that)$/i.test(content.trim())) {
           await undoLastFieldFill()
           return
@@ -95,13 +99,20 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
         const fields = detectFormFields()
         const actionResponse = await fetch('http://localhost:8000/api/chatbot/action', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: content, context: currentScreenContext, language, fields }),
+          body: JSON.stringify({ message: content, context: currentScreenContext, path: window.location.pathname, language, fields }),
         })
         if (actionResponse.ok) {
           const action = await actionResponse.json()
           if (action.type === 'action' && action.action === 'fill_field') {
             const success = await fillFormField(action.field, action.value)
             if (success && isSpeaking) await speakText(action.response, language)
+            return
+          }
+          if (action.type === 'action' && (action.action === 'navigate' || action.action === 'select_scheme')) {
+            if (action.action === 'select_scheme' && action.field) sessionStorage.setItem('udyamsetu:selected-scheme', action.field)
+            if (action.path) window.dispatchEvent(new CustomEvent('udyamsetu:agent-action', { detail: action }))
+            addAssistantMessage(action.response || 'Done.')
+            if (isSpeaking && action.response) await speakText(action.response, language)
             return
           }
         }
@@ -142,7 +153,7 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false)
       }
     },
-    [currentScreenContext, language, messages, isSpeaking, fillFormField, undoLastFieldFill]
+    [currentScreenContext, language, messages, isSpeaking, fillFormField, undoLastFieldFill, addAssistantMessage]
   )
 
   const clearMessages = useCallback(() => {
@@ -187,18 +198,63 @@ export function useChatbot() {
 }
 
 // Helper function for text-to-speech
-export async function speakText(text: string, language: string) {
+function speechText(text: string) {
+  return text
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/https?:\/\/\S+/g, ' ')
+    .replace(/[\\`*_~#>|]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+async function playIndicAudio(text: string, language: string): Promise<boolean> {
+  let url = ''
+  try {
+    const response = await fetch('http://localhost:8000/api/tts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, language }),
+    })
+    if (!response.ok) return false
+    url = URL.createObjectURL(await response.blob())
+    const audio = new Audio(url)
+    audio.preload = 'auto'
+    await new Promise<void>((resolve, reject) => {
+      const timeout = window.setTimeout(() => reject(new Error('TTS playback timed out')), 180000)
+      audio.onended = () => { window.clearTimeout(timeout); resolve() }
+      audio.onerror = () => { window.clearTimeout(timeout); reject(new Error('Audio playback failed')) }
+      void audio.play().catch((error) => { window.clearTimeout(timeout); reject(error) })
+    })
+    return true
+  } catch (error) {
+    console.warn('Indic TTS playback failed; using browser speech fallback.', error)
+    return false
+  } finally {
+    if (url) URL.revokeObjectURL(url)
+  }
+}
+
+function speakWithBrowser(text: string, language: string) {
   if (!('speechSynthesis' in window)) return
-
-  // Cancel any ongoing speech
   window.speechSynthesis.cancel()
-
   const utterance = new SpeechSynthesisUtterance(text)
   utterance.lang = language === 'hi' ? 'hi-IN' : language === 'mr' ? 'mr-IN' : 'en-IN'
   utterance.rate = 0.9
   utterance.pitch = 1
-
   window.speechSynthesis.speak(utterance)
+}
+
+export async function speakText(text: string, language: string) {
+  const cleanText = speechText(text)
+  if (!cleanText) return
+
+  // Indic Parler-TTS is preferred for all three languages, including English.
+  if (await playIndicAudio(cleanText, language)) return
+
+  // Browser speech is only a fallback when the configured service is unavailable.
+  speakWithBrowser(cleanText, language)
 }
 
 // Helper function for speech-to-text

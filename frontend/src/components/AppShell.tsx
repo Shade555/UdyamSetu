@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { House, LogOut, Menu, Moon, Sun, UserRound, X } from "lucide-react";
+import { House, LogOut, Menu, UserRound, X } from "lucide-react";
 import { useState } from "react";
 
 const navigation = [
@@ -13,24 +13,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const { signOut } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const [isDark, setIsDark] = useState(
-    () => localStorage.getItem("udyamsetu-theme") !== "light",
-  );
 
   const handleSignOut = async () => {
     await signOut();
     navigate("/login");
   };
 
-  const toggleTheme = () => {
-    const nextIsDark = !isDark;
-    setIsDark(nextIsDark);
-    localStorage.setItem("udyamsetu-theme", nextIsDark ? "dark" : "light");
-  };
-
   return (
     <div
-      className={`app-shell min-h-screen bg-neutral-50 text-neutral-900 ${isDark ? "dark" : "light"}`}
+      className="app-shell min-h-screen bg-neutral-50 text-neutral-900"
     >
       <button
         type="button"
@@ -67,17 +58,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <span className="text-xs text-neutral-500">
               Your official next step
             </span>
-          </button>
-          <button
-            type="button"
-            aria-label={
-              isDark ? "Switch to light theme" : "Switch to dark theme"
-            }
-            title={isDark ? "Switch to light theme" : "Switch to dark theme"}
-            className="rounded-lg p-2 text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
-            onClick={toggleTheme}
-          >
-            {isDark ? <Sun size={17} /> : <Moon size={17} />}
           </button>
           <button
             type="button"
