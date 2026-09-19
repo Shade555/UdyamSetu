@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import { ChatbotProvider } from "./context/ChatbotContext";
 import { useChatbotContext } from "./hooks/useChatbotContext";
@@ -88,7 +89,17 @@ function HomeRoute({ activeStep }: { activeStep?: number }) {
 
 function AppContent() {
   const { session } = useAuth();
+  const navigate = useNavigate();
   useChatbotContext();
+
+  useEffect(() => {
+    const handleAgentAction = (event: Event) => {
+      const action = (event as CustomEvent<{ path?: string }>).detail;
+      if (action?.path) navigate(action.path);
+    };
+    window.addEventListener('udyamsetu:agent-action', handleAgentAction);
+    return () => window.removeEventListener('udyamsetu:agent-action', handleAgentAction);
+  }, [navigate]);
 
   return (
     <>

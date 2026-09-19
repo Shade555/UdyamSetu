@@ -112,6 +112,42 @@ This is the living implementation checklist. Update task status and notes as wor
 
 **Next Phase**: Backend integration (Supabase data seeding + FastAPI APIs for eligibility rules, scheme matching, partner routing)
 
+## Active Implementation Checklist (Current)
+
+This section supersedes status claims in archived build/chatbot summaries. Complete items only after validating the real integrated flow, not a mock or static screen.
+
+### Core Data and Journey
+
+- [ ] Create/configure the Supabase project and run `SUPABASE_SETUP.sql`.
+- [ ] Seed version-controlled, verified scheme and partner data with source, effective date, verification date, and version fields.
+- [ ] Replace mock requirement extraction with a real backend flow and save the confirmed requirement.
+- [ ] Preserve the onboarding profile between Requirement Input and Profile Confirmation; remove the current `setUserProfile={() => {}}` / `profile={null}` placeholders.
+- [ ] Implement auditable eligibility, scheme-ranking, finance, document, and partner-routing endpoints.
+- [ ] Connect dashboard scheme selection/details to real selected scheme data instead of placeholder workflow content.
+
+### Language, Chatbot, and Voice
+
+- [x] Context-aware chatbot API with English, Hindi, and Marathi language selection.
+- [x] Safe visible-field detection, validation, auto-fill, confirmation, undo, basic dashboard scheme selection, and workflow navigation commands.
+- [x] Prevent password/PIN values from being sent to or filled by the chatbot.
+- [ ] Translate all product UI strings and apply locale-aware number/currency/date formatting for English, Hindi, and Marathi.
+- [ ] Add the backend TTS proxy that reads `INDIC_TTS_URL` and `INDIC_TTS_API_KEY`, calls the Indic TTS service, and returns audio to the frontend.
+- [ ] Replace browser-only speech output with API audio playback plus a graceful browser/offline fallback.
+- [ ] Decide whether to replace browser speech recognition with hosted STT for consistent Hindi/Marathi input.
+- [ ] Keep the Colab Indic TTS API temporary for demos only; deploy the same service to persistent infrastructure before production.
+
+### Reliability, Security, and Validation
+
+- [ ] Implement Service Worker/IndexedDB persistence, queued sync, stale-data messages, and reconnect handling.
+- [ ] Add tests for chatbot actions, profile extraction, eligibility boundaries, finance calculations, partner compatibility, and language parity.
+- [ ] Run end-to-end tests for sign-up, onboarding, scheme selection, chat, voice, and mobile layouts.
+- [ ] Ensure real secrets stay only in root `.env`, `.env` remains ignored by Git, and rotate any credential that has been exposed outside the intended secret store.
+
+### Documentation Cleanup
+
+- [ ] Keep only `README.md`, `context.md`, `progress.md`, and `SETUP.md` as the maintained documentation set.
+- [ ] Delete/archive historical summaries and obsolete chatbot/Supabase setup notes after reviewing `SETUP.md`.
+
 ## Decision Log
 
 - Rules first, AI second. ✅ Implemented in frontend

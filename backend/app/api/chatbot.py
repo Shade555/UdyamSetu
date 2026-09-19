@@ -83,6 +83,7 @@ class AgentField(BaseModel):
 class AgentActionRequest(BaseModel):
     message: str
     context: str = ""
+    path: str = ""
     language: str = "en"
     fields: List[AgentField] = []
 
@@ -93,6 +94,7 @@ class AgentActionResponse(BaseModel):
     field: Optional[str] = None
     value: Optional[str] = None
     response: Optional[str] = None
+    path: Optional[str] = None
 
 
 # ============================================================================
@@ -223,6 +225,39 @@ async def process_action(request: AgentActionRequest):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Message cannot be empty")
     if request.language not in ["en", "hi", "mr"]:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported language")
+
+    message = request.message.lower()
+    # Navigation is deterministic: it is never delegated to the model.
+    next_paths = {
+        "/home/scheme-recommendations": "/home/scheme-details",
+        "/home/scheme-details": "/home/emi-calculator",
+        "/home/emi-calculator": "/home/partner-locator",
+        "/home/partner-locator": "/home/partner-eligibility",
+        "/home/partner-eligibility": "/home/official-action",
+    }
+    previous_paths = {destination: source for source, destination in next_paths.items()}
+    if any(phrase in message for phrase in ("next", "continue", "go ahead", "proceed")) and request.path in next_paths:
+        destination = next_paths[request.path]
+        return AgentActionResponse(type="action", action="navigate", path=destination, response="Moving to the next step.")
+    if any(phrase in message for phrase in ("go back", "previous", "back")) and request.path in previous_paths:
+        destination = previous_paths[request.path]
+        return AgentActionResponse(type="action", action="navigate", path=destination, response="Returning to the previous step.")
+
+    schemes = {
+        "daily entrepreneurship development scheme": "Daily Entrepreneurship Development Scheme",
+        "stand up india": "Stand Up India Scheme",
+        "stand up india scheme": "Stand Up India Scheme",
+        "pmegp": "PMEGP Scheme",
+        "pmegp scheme": "PMEGP Scheme",
+    }
+    if request.path == "/home" and any(word in message for word in ("select", "choose", "open", "pick")):
+        selected = next((name for alias, name in schemes.items() if alias in message), None)
+        if selected:
+            return AgentActionResponse(
+                type="action", action="select_scheme", field=selected, path="/home/scheme-details",
+                response=f"Selected {selected}. Opening its details.",
+            )
+        return AgentActionResponse(type="action", action="select_scheme", response="Please say the scheme name: Daily Entrepreneurship Development Scheme, Stand Up India Scheme, or PMEGP Scheme.")
 
     # Password fields must never be sent to, or targeted by, this endpoint.
     safe_fields = [field for field in request.fields if field.type.lower() != "password"]

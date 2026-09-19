@@ -34,6 +34,7 @@ const schemes = [
 
 export default function HomeWorkflow({ activeStep }: { activeStep?: number }) {
   const navigate = useNavigate();
+  const selectedScheme = sessionStorage.getItem("udyamsetu:selected-scheme");
   const currentIndex = Math.max(
     0,
     steps.findIndex((step) => step.number === activeStep),
@@ -58,6 +59,9 @@ export default function HomeWorkflow({ activeStep }: { activeStep?: number }) {
           <h1 className="mt-2 text-3xl font-bold text-neutral-900">
             This is the {currentStep.label} page
           </h1>
+          {activeStep === 6 && selectedScheme && (
+            <p className="mt-2 text-neutral-600">Selected scheme: {selectedScheme}</p>
+          )}
         </div>
 
         <StepProgress activeStep={activeStep} />
@@ -112,7 +116,10 @@ export default function HomeWorkflow({ activeStep }: { activeStep?: number }) {
               key={scheme}
               type="button"
               className="card text-left hover:border-accent-400"
-              onClick={() => navigate("/home/scheme-details")}
+              onClick={() => {
+                sessionStorage.setItem("udyamsetu:selected-scheme", scheme);
+                navigate("/home/scheme-details");
+              }}
             >
               <span className="text-sm font-semibold text-accent-700">
                 Recommended scheme

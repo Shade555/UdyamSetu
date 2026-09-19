@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     supabase_url: str
     supabase_service_key: str
     groq_api_key: str = ""
+    indic_tts_url: str = ""
+    indic_tts_api_key: str = ""
     frontend_url: str = "http://localhost:5174"
     api_url: str = "http://localhost:8000"
 

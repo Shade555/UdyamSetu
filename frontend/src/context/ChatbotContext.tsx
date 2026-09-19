@@ -88,6 +88,10 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true)
 
       try {
+        if (/\b(password|passcode|pin)\b/i.test(content) && /\b(is|to|as|set|fill|enter)\b/i.test(content)) {
+          addAssistantMessage('For your security, I can’t receive, repeat, or fill passwords. Please enter it directly in the password field.')
+          return
+        }
         if (/^(undo|undo that|change that)$/i.test(content.trim())) {
           await undoLastFieldFill()
           return
@@ -95,13 +99,20 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
         const fields = detectFormFields()
         const actionResponse = await fetch('http://localhost:8000/api/chatbot/action', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: content, context: currentScreenContext, language, fields }),
+          body: JSON.stringify({ message: content, context: currentScreenContext, path: window.location.pathname, language, fields }),
         })
         if (actionResponse.ok) {
           const action = await actionResponse.json()
           if (action.type === 'action' && action.action === 'fill_field') {
             const success = await fillFormField(action.field, action.value)
             if (success && isSpeaking) await speakText(action.response, language)
+            return
+          }
+          if (action.type === 'action' && (action.action === 'navigate' || action.action === 'select_scheme')) {
+            if (action.action === 'select_scheme' && action.field) sessionStorage.setItem('udyamsetu:selected-scheme', action.field)
+            if (action.path) window.dispatchEvent(new CustomEvent('udyamsetu:agent-action', { detail: action }))
+            addAssistantMessage(action.response || 'Done.')
+            if (isSpeaking && action.response) await speakText(action.response, language)
             return
           }
         }
@@ -142,7 +153,7 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false)
       }
     },
-    [currentScreenContext, language, messages, isSpeaking, fillFormField, undoLastFieldFill]
+    [currentScreenContext, language, messages, isSpeaking, fillFormField, undoLastFieldFill, addAssistantMessage]
   )
 
   const clearMessages = useCallback(() => {
