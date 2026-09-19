@@ -12,21 +12,6 @@ import {
 import { useChatbot, startSpeechRecognition } from '../context/ChatbotContext'
 
 export default function ContextAwareChatbot() {
-  const [theme, setTheme] = useState(() => 
-    localStorage.getItem("udyamsetu-theme") !== "light" ? 'dark' : 'light'
-  )
-
-  useEffect(() => {
-    const handleStorage = () => {
-      setTheme(localStorage.getItem("udyamsetu-theme") !== "light" ? 'dark' : 'light')
-    }
-    window.addEventListener('storage', handleStorage)
-    const interval = setInterval(handleStorage, 100)
-    return () => {
-      window.removeEventListener('storage', handleStorage)
-      clearInterval(interval)
-    }
-  }, [])
   const {
     messages,
     isOpen,
@@ -91,24 +76,27 @@ export default function ContextAwareChatbot() {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            className={`${theme === 'dark' ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'} border-2 rounded-2xl shadow-2xl flex flex-col h-96 w-96 mb-4`}
+            drag
+            dragConstraints={{ left: -800, right: 0, top: -800, bottom: 0 }}
+            dragElastic={0.1}
+            className="bg-white border-neutral-200 border-2 rounded-2xl shadow-2xl flex flex-col w-[calc(100vw-2rem)] sm:w-96 min-h-[300px] h-auto max-h-[calc(100vh-8rem)] sm:max-h-[600px] mb-4 origin-bottom-right"
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.3 }}
           >
             {/* Header */}
-            <div className={`${theme === 'dark' ? 'bg-neutral-800 text-neutral-50' : 'bg-neutral-100 text-neutral-900'} px-6 py-4 rounded-t-lg flex justify-between items-center`}>
+            <div className="bg-neutral-100 text-neutral-900 px-6 py-4 rounded-t-lg flex justify-between items-center cursor-move active:cursor-grabbing">
               <div className="flex items-center gap-2">
                 <MessageCircle size={20} />
                 <div>
                   <h3 className="font-bold text-sm">UdyamSetu Guide</h3>
-                  <p className={`text-xs ${theme === 'dark' ? 'opacity-90' : 'opacity-70'}`}>Always here to help</p>
+                  <p className="text-xs opacity-70">Always here to help</p>
                 </div>
               </div>
               <motion.button
                 onClick={() => setIsOpen(false)}
-                className={`${theme === 'dark' ? 'hover:bg-neutral-700' : 'hover:bg-neutral-200'} p-1 rounded-lg transition-colors`}
+                className="hover:bg-neutral-200 p-1 rounded-lg transition-colors"
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
               >
@@ -117,7 +105,7 @@ export default function ContextAwareChatbot() {
             </div>
 
             {/* Messages Area */}
-            <div className={`flex-1 overflow-y-auto p-4 space-y-4 ${theme === 'dark' ? 'bg-neutral-900' : 'bg-neutral-50'}`}>
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-neutral-50">
               {messages.length === 0 ? (
                 <motion.div
                   className="text-center text-neutral-500 text-sm py-8"
@@ -141,8 +129,8 @@ export default function ContextAwareChatbot() {
                     <div
                       className={`max-w-xs px-4 py-2 rounded-lg text-sm ${
                         msg.role === 'user'
-                          ? 'bg-neutral-700 text-neutral-50 rounded-br-none'
-                          : 'bg-neutral-800 border border-neutral-700 text-neutral-200 rounded-bl-none'
+                          ? 'bg-accent-600 text-white rounded-br-none'
+                          : 'bg-white border border-neutral-200 text-neutral-900 rounded-bl-none'
                       }`}
                     >
                       <p>{msg.content}</p>
@@ -168,7 +156,7 @@ export default function ContextAwareChatbot() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                 >
-                  <div className="bg-neutral-800 border border-neutral-700 rounded-lg rounded-bl-none px-4 py-2">
+                  <div className="bg-white border border-neutral-200 rounded-lg rounded-bl-none px-4 py-2">
                     <div className="flex gap-2">
                       <div
                         className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce"
@@ -190,14 +178,14 @@ export default function ContextAwareChatbot() {
             </div>
 
             {/* Controls */}
-            <div className="border-t border-neutral-700 bg-neutral-900 p-3 space-y-2 rounded-b-lg">
+            <div className="border-t border-neutral-200 bg-white p-3 space-y-2 rounded-b-lg">
               {/* Language & Voice Controls */}
               <div className="flex gap-2 mb-2">
                 {/* Language Selector */}
                 <div className="relative">
                   <motion.button
                     onClick={() => setShowLanguageMenu(!showLanguageMenu)}
-                    className="flex items-center gap-1 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 rounded-lg text-xs font-semibold text-neutral-300 transition-colors"
+                    className="flex items-center gap-1 px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 rounded-lg text-xs font-semibold text-neutral-600 transition-colors"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
@@ -209,7 +197,7 @@ export default function ContextAwareChatbot() {
                   <AnimatePresence>
                     {showLanguageMenu && (
                       <motion.div
-                        className="absolute bottom-full left-0 mb-1 bg-neutral-800 border border-neutral-700 rounded-lg shadow-lg py-1 min-w-max"
+                        className="absolute bottom-full left-0 mb-1 bg-white border border-neutral-200 rounded-lg shadow-lg py-1 min-w-max"
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 10 }}
@@ -220,10 +208,10 @@ export default function ContextAwareChatbot() {
                           <button
                             key={lang}
                             onClick={() => handleLanguageChange(lang)}
-                            className={`block w-full text-left px-4 py-2 text-sm hover:bg-neutral-700 transition-colors ${
+                            className={`block w-full text-left px-4 py-2 text-sm hover:bg-neutral-50 transition-colors ${
                               language === lang
-                                ? 'bg-neutral-700 text-neutral-100 font-semibold'
-                                : 'text-neutral-300'
+                                ? 'bg-neutral-100 text-neutral-900 font-semibold'
+                                : 'text-neutral-600'
                             }`}
                           >
                             {languageLabels[lang]}
@@ -239,8 +227,8 @@ export default function ContextAwareChatbot() {
                   onClick={toggleVoiceMode}
                   className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
                     isSpeaking
-                      ? 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
-                      : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
+                      ? 'bg-accent-50 text-accent-700 hover:bg-accent-100'
+                      : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
                   }`}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -253,7 +241,7 @@ export default function ContextAwareChatbot() {
                 {/* Clear Chat */}
                 <motion.button
                   onClick={clearMessages}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 rounded-lg text-xs font-semibold text-neutral-300 transition-colors ml-auto"
+                  className="flex items-center gap-1 px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 rounded-lg text-xs font-semibold text-neutral-600 transition-colors ml-auto"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -268,7 +256,7 @@ export default function ContextAwareChatbot() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Ask me anything..."
-                  className="flex-1 px-3 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-sm text-neutral-200 placeholder-neutral-500 focus:outline-none focus:border-neutral-600 focus:ring-1 focus:ring-neutral-600"
+                  className="flex-1 px-3 py-2 bg-neutral-50 border border-neutral-200 rounded-lg text-sm text-neutral-900 placeholder-neutral-500 focus:outline-none focus:border-accent-500 focus:ring-1 focus:ring-accent-500"
                   disabled={isLoading}
                 />
                 <motion.button
@@ -278,7 +266,7 @@ export default function ContextAwareChatbot() {
                   className={`p-2 rounded-lg transition-colors ${
                     isListening
                       ? 'bg-red-600 text-white'
-                      : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'
+                      : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
                   }`}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -289,7 +277,7 @@ export default function ContextAwareChatbot() {
                 <motion.button
                   type="submit"
                   disabled={isLoading || !input.trim()}
-                  className="p-2 bg-neutral-200 text-neutral-900 rounded-lg hover:bg-neutral-300 transition-colors disabled:opacity-50"
+                  className="p-2 bg-accent-600 text-white hover:bg-accent-700 rounded-lg transition-colors disabled:opacity-50 disabled:bg-neutral-200 disabled:text-neutral-400"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -304,7 +292,7 @@ export default function ContextAwareChatbot() {
       {/* Floating Button */}
       <motion.button
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-14 h-14 ${theme === 'dark' ? 'bg-neutral-800 text-neutral-200 hover:bg-neutral-700' : 'bg-neutral-200 text-neutral-800 hover:bg-neutral-300'} rounded-full shadow-lg flex items-center justify-center transition-colors`}
+        className="w-14 h-14 bg-accent-600 text-white hover:bg-accent-700 rounded-full shadow-lg flex items-center justify-center transition-colors"
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
         style={{ visibility: isOpen ? 'hidden' : 'visible' }}
