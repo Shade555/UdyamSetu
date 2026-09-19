@@ -21,6 +21,7 @@ import RequirementInput from "./pages/RequirementInput";
 import ProfileConfirmation from "./pages/ProfileConfirmation";
 import PlaceholderPage from "./pages/PlaceholderPage";
 import HomeWorkflow from "./pages/HomeWorkflow";
+import EMICalculator from "./pages/EMICalculator";
 
 // Protected Route Component
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -108,142 +109,144 @@ function AppContent() {
       <ContextAwareChatbot />
       <ThemeToggle />
       <Routes>
-      {/* Auth Routes */}
-      <Route
-        path="/login"
-        element={session ? <Navigate to="/entry" /> : <Login />}
-      />
-      <Route
-        path="/signup"
-        element={session ? <Navigate to="/entry" /> : <Signup />}
-      />
+        {/* Auth Routes */}
+        <Route
+          path="/login"
+          element={session ? <Navigate to="/entry" /> : <Login />}
+        />
+        <Route
+          path="/signup"
+          element={session ? <Navigate to="/entry" /> : <Signup />}
+        />
 
-      <Route
-        path="/entry"
-        element={
-          <ProtectedRoute>
-            <EntryRoute />
-          </ProtectedRoute>
-        }
-      />
+        <Route
+          path="/entry"
+          element={
+            <ProtectedRoute>
+              <EntryRoute />
+            </ProtectedRoute>
+          }
+        />
 
-      {/* Dashboard & Profile */}
-      <Route path="/dashboard" element={<Navigate to="/entry" replace />} />
-      <Route
-        path="/home"
-        element={
-          <ProtectedRoute>
-            <HomeRoute />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/home/scheme-recommendations"
-        element={
-          <ProtectedRoute>
-            <HomeRoute activeStep={5} />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/home/scheme-details"
-        element={
-          <ProtectedRoute>
-            <HomeRoute activeStep={6} />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/home/emi-calculator"
-        element={
-          <ProtectedRoute>
-            <HomeRoute activeStep={7} />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/home/partner-locator"
-        element={
-          <ProtectedRoute>
-            <HomeRoute activeStep={8} />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/home/partner-eligibility"
-        element={
-          <ProtectedRoute>
-            <HomeRoute activeStep={9} />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/home/official-action"
-        element={
-          <ProtectedRoute>
-            <HomeRoute activeStep={10} />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/applied-schemes"
-        element={
-          <ProtectedRoute>
-            <ShellRoute title="Applied Schemes" />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/profile"
-        element={
-          <ProtectedRoute>
-            <AppShell>
-              <PlaceholderPage title="Profile" />
-            </AppShell>
-          </ProtectedRoute>
-        }
-      />
+        {/* Dashboard & Profile */}
+        <Route path="/dashboard" element={<Navigate to="/entry" replace />} />
+        <Route
+          path="/home"
+          element={
+            <ProtectedRoute>
+              <HomeRoute />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/home/scheme-recommendations"
+          element={
+            <ProtectedRoute>
+              <HomeRoute activeStep={5} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/home/scheme-details"
+          element={
+            <ProtectedRoute>
+              <HomeRoute activeStep={6} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/home/emi-calculator"
+          element={
+            <ProtectedRoute>
+              <AppShell>
+                <EMICalculator />
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/home/partner-locator"
+          element={
+            <ProtectedRoute>
+              <HomeRoute activeStep={8} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/home/partner-eligibility"
+          element={
+            <ProtectedRoute>
+              <HomeRoute activeStep={9} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/home/official-action"
+          element={
+            <ProtectedRoute>
+              <HomeRoute activeStep={10} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/applied-schemes"
+          element={
+            <ProtectedRoute>
+              <ShellRoute title="Applied Schemes" />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <AppShell>
+                <PlaceholderPage title="Profile" />
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
 
-      {/* Onboarding Flow (Protected) */}
-      <Route
-        path="/onboarding/language"
-        element={
-          <ProtectedRoute>
-            <LanguageSelector onSelectLanguage={() => {}} />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/onboarding/need"
-        element={
-          <ProtectedRoute>
-            <NeedSelector language="en" />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/onboarding/requirement"
-        element={
-          <ProtectedRoute>
-            <RequirementInput language="en" setUserProfile={() => {}} />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/onboarding/profile"
-        element={
-          <ProtectedRoute>
-            <ProfileConfirmation language="en" profile={null} />
-          </ProtectedRoute>
-        }
-      />
+        {/* Onboarding Flow (Protected) */}
+        <Route
+          path="/onboarding/language"
+          element={
+            <ProtectedRoute>
+              <LanguageSelector onSelectLanguage={() => {}} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/onboarding/need"
+          element={
+            <ProtectedRoute>
+              <NeedSelector language="en" />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/onboarding/requirement"
+          element={
+            <ProtectedRoute>
+              <RequirementInput language="en" setUserProfile={() => {}} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/onboarding/profile"
+          element={
+            <ProtectedRoute>
+              <ProfileConfirmation language="en" profile={null} />
+            </ProtectedRoute>
+          }
+        />
 
-      {/* Fallback */}
-      <Route
-        path="/"
-        element={<Navigate to={session ? "/entry" : "/login"} replace />}
-      />
-    </Routes>
+        {/* Fallback */}
+        <Route
+          path="/"
+          element={<Navigate to={session ? "/entry" : "/login"} replace />}
+        />
+      </Routes>
     </>
   );
 }

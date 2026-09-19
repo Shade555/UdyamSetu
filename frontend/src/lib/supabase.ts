@@ -1,29 +1,31 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env')
+  throw new Error(
+    "Missing Supabase environment variables. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env",
+  );
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 /**
  * Get user profile from database
  */
 export async function getUserProfile(userId: string) {
   const { data, error } = await supabase
-    .from('user_profiles')
-    .select('*')
-    .eq('id', userId)
-    .single()
+    .from("user_profiles")
+    .select("*")
+    .eq("id", userId)
+    .single();
 
   if (error) {
-    console.error('Error fetching user profile:', error)
-    return null
+    console.error("Error fetching user profile:", error);
+    return null;
   }
-  return data
+  return data;
 }
 
 /**
@@ -31,17 +33,17 @@ export async function getUserProfile(userId: string) {
  */
 export async function updateUserProfile(userId: string, profile: any) {
   const { data, error } = await supabase
-    .from('user_profiles')
+    .from("user_profiles")
     .update(profile)
-    .eq('id', userId)
+    .eq("id", userId)
     .select()
-    .single()
+    .single();
 
   if (error) {
-    console.error('Error updating user profile:', error)
-    throw error
+    console.error("Error updating user profile:", error);
+    throw error;
   }
-  return data
+  return data;
 }
 
 /**
@@ -49,17 +51,17 @@ export async function updateUserProfile(userId: string, profile: any) {
  */
 export async function hasCompletedOnboarding(userId: string) {
   const { data, error } = await supabase
-    .from('requirements')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('is_confirmed', true)
-    .limit(1)
+    .from("requirements")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("is_confirmed", true)
+    .limit(1);
 
   if (error) {
-    console.error('Error checking onboarding:', error)
-    return false
+    console.error("Error checking onboarding:", error);
+    return false;
   }
-  return data && data.length > 0
+  return data && data.length > 0;
 }
 
 /**
@@ -67,19 +69,19 @@ export async function hasCompletedOnboarding(userId: string) {
  */
 export async function getUserRequirement(userId: string) {
   const { data, error } = await supabase
-    .from('requirements')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('is_confirmed', true)
-    .order('created_at', { ascending: false })
+    .from("requirements")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("is_confirmed", true)
+    .order("created_at", { ascending: false })
     .limit(1)
-    .single()
+    .single();
 
-  if (error && error.code !== 'PGRST116') {
-    console.error('Error fetching requirement:', error)
-    return null
+  if (error && error.code !== "PGRST116") {
+    console.error("Error fetching requirement:", error);
+    return null;
   }
-  return data || null
+  return data || null;
 }
 
 /**
@@ -87,7 +89,7 @@ export async function getUserRequirement(userId: string) {
  */
 export async function createRequirement(userId: string, requirement: any) {
   const { data, error } = await supabase
-    .from('requirements')
+    .from("requirements")
     .insert([
       {
         user_id: userId,
@@ -95,13 +97,13 @@ export async function createRequirement(userId: string, requirement: any) {
       },
     ])
     .select()
-    .single()
+    .single();
 
   if (error) {
-    console.error('Error creating requirement:', error)
-    throw error
+    console.error("Error creating requirement:", error);
+    throw error;
   }
-  return data
+  return data;
 }
 
 /**
@@ -109,16 +111,33 @@ export async function createRequirement(userId: string, requirement: any) {
  */
 export async function getActiveSchemes() {
   const { data, error } = await supabase
-    .from('schemes')
-    .select('*')
-    .eq('status', 'active')
-    .order('name')
+    .from("schemes")
+    .select("*")
+    .eq("status", "active")
+    .order("name");
 
   if (error) {
-    console.error('Error fetching schemes:', error)
-    return []
+    console.error("Error fetching schemes:", error);
+    return [];
   }
-  return data || []
+  return data || [];
+}
+
+export async function getSchemeByCode(code: string) {
+  const { data, error } = await supabase
+    .from("schemes")
+    .select("code, max_amount")
+    .eq("code", code)
+    .eq("status", "active")
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Error fetching scheme limit:", error);
+    throw error;
+  }
+
+  return data;
 }
 
 /**
@@ -126,14 +145,14 @@ export async function getActiveSchemes() {
  */
 export async function getActivePartners() {
   const { data, error } = await supabase
-    .from('partners')
-    .select('*')
-    .eq('authorization_status', true)
-    .order('name')
+    .from("partners")
+    .select("*")
+    .eq("authorization_status", true)
+    .order("name");
 
   if (error) {
-    console.error('Error fetching partners:', error)
-    return []
+    console.error("Error fetching partners:", error);
+    return [];
   }
-  return data || []
+  return data || [];
 }
